@@ -1,5 +1,8 @@
 name: gcloud
 description: Configure gcloud
+inputs:
+  cloud_sdk_service_account_key:
+    required: true
 runs:
   using: docker
   image: Dockerfile

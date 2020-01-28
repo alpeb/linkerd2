@@ -3,7 +3,7 @@
 set -eu
 
 # Install gcloud and kubectl.
-echo "$CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
+echo "$INPUT_CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
 dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
 (
     . bin/_gcp.sh ;
