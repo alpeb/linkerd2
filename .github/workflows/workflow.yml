@@ -56,7 +56,7 @@ jobs:
     - name: test gcloud
       env:
         VERSION: git-931bb022-85
-        CLOUDSDK_ACTIVE_CONFIG_NAME: /home/runner/work/_temp/_github_home/.config/gcloud/configurations/config_default
+        CLOUDSDK_ACTIVE_CONFIG_NAME: ../../../../work/_temp/_github_home/.config/gcloud/configurations/config_default
       run: |
         echo $HOME
         export PATH=/home/runner/work/_temp/_github_home/google-cloud-sdk/bin:$PATH
