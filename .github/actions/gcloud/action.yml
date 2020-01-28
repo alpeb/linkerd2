@@ -1,0 +1,5 @@
+name: gcloud
+description: Configure gcloud
+runs:
+  using: docker
+  image: Dockerfile
