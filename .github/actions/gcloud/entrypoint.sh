@@ -16,5 +16,7 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
     get_k8s_ctx "$INPUT_GCP_PROJECT" "$INPUT_GCP_ZONE" "$INPUT_CLUSTER"
 )
 . "$dir/path.bash.inc"
+echo $PATH
+which gcloud
 gcloud auth configure-docker
 bin/kubectl version --short

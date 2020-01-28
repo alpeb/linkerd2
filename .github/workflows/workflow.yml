@@ -58,4 +58,6 @@ jobs:
         VERSION: git-931bb022-85
       run: |
         echo $HOME
+        echo $PATH
+        which gcloud
         gcloud container clusters get-credentials testing-$VERSION --zone us-central1-a
