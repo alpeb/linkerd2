@@ -10,9 +10,9 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
     install_gcloud "$dir"
     gcloud components install kubectl
     # Configure gcloud with a service account.
-    set_gcloud_config "$GCP_PROJECT" "$GCP_ZONE" "$GKE_CLUSTER"
+    set_gcloud_config "$INPUT_GCP_PROJECT" "$INPUT_GCP_ZONE" "$INPUT_CLUSTER"
     # Get a kubernetes context.
-    get_k8s_ctx "$GCP_PROJECT" "$GCP_ZONE" "$GKE_CLUSTER"
+    get_k8s_ctx "$INPUT_GCP_PROJECT" "$INPUT_GCP_ZONE" "$INPUT_CLUSTER"
 )
 . "$dir/path.bash.inc"
 gcloud auth configure-docker

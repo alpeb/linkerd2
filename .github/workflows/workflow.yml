@@ -50,6 +50,9 @@ jobs:
       uses: ./.github/actions/gcloud
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
+        gcp_project: ${{ secrets.GCP_PROJECT }}
+        gcp_zone: ${{ secrets.GCP_ZONE }}
+        cluster: testing-git-931bb022-85
     - name: test gcloud
       env:
         VERSION: git-931bb022-85
