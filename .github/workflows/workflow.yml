@@ -47,7 +47,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Configure gcloud
-      uses: gcloud
+      uses: ./.github/actions/gcloud
     - name: test gcloud
       env:
         VERSION: git-931bb022-85
