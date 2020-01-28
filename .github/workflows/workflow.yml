@@ -59,5 +59,4 @@ jobs:
         CLOUDSDK_CONFIG: /home/runner/work/_temp/_github_home/.config/gcloud
       run: |
         export PATH=/home/runner/work/_temp/_github_home/google-cloud-sdk/bin:$PATH
-        chown runner 
         gcloud container clusters get-credentials testing-$VERSION --zone us-central1-a
