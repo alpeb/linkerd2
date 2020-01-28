@@ -17,8 +17,6 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
 )
 . "$dir/path.bash.inc"
 echo $PATH
-which gcloud
-ls -l ~/.config/gcloud
-ls -l ~/.config/gcloud/configurations
+gcloud info --format='get(config.paths.active_config_path)'
 gcloud auth configure-docker
 bin/kubectl version --short
