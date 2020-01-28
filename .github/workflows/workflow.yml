@@ -71,8 +71,8 @@ jobs:
     - name: test gcloud
       env:
         VERSION: git-931bb022-85
-        CLOUDSDK_CONFIG: /home/runner/work/_temp/_github_home/.config/gcloud
+        CLOUDSDK_CONFIG: ${{ runner.temp }}/_github_home/.config/gcloud
       run: |
-        export PATH=/home/runner/work/_temp/_github_home/google-cloud-sdk/bin:$PATH
-        sudo chown -R runner /home/runner/work/_temp/_github_home/.config/gcloud
+        export PATH=$RUNNER_TEMP/_github_home/google-cloud-sdk/bin:$PATH
+        sudo chown -R runner $RUNNER_TEMP/_github_home/.config/gcloud
         gcloud container clusters get-credentials testing-$VERSION --zone us-central1-a
