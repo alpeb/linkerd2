@@ -19,4 +19,4 @@ gcloud auth configure-docker
 bin/kubectl version --short
 
 # so that it's modifiable by the runner's user
-chown -R 777 $HOME/.config/gcloud
+chmod -R 777 $HOME/.config/gcloud
