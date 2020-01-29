@@ -16,7 +16,7 @@ async function run() {
     });
 
     var clientVersion;
-    await exec.exec('target/cli/linux/linkerd', ['--client', '--short'], {
+    await exec.exec('target/cli/linux/linkerd', ['version', '--client', '--short'], {
         listeners: {
             stdout: (data) => {
                 clientVersion = data.toString()
@@ -37,7 +37,7 @@ async function run() {
 }
 
 try {
-    console.log('run_id', github.context.run_id);
+    console.log('run_id', github.context);
     run()
 } catch (error) {
     core.setFailed(error.message);
