@@ -13,11 +13,10 @@ try {
 
   fs.writeFile(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'), function (err) {
     if (err) throw err;
-    console.log('File is created successfully.');
   }); 
 
   //exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
-  //exec.exec('echo "foo"');
+  exec.exec('cat /home/runner/.gcp.json');
   //exec.exec('node -version');
   //echo "$CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
   //await exec.exec('gcloud auth activate-service-account --key-file .gcp.json');
