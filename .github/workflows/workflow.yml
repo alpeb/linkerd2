@@ -37,13 +37,30 @@ jobs:
     runs-on: ubuntu-latest
     name: A job to say hello
     steps:
+
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Hello world action step
-      id: hello
+
+    - name: Build CLI
+       run: |
+         bin/build-cli-bin
+
+    - name: Create cluster name
+      id: cluster-name
+      run: |
+        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
+        CLIENT_VERSION=$(target/cli/linux/linkerd version --client --short)
+        # validate CLI version matches the repo
+        [[ "$TAG" == "$CLIENT_VERSION" ]]
+        echo "Installed Linkerd CLI version: $TAG"
+        # last part is to distinguish runs on the same sha
+        VERSION_STR="$(echo $CLIENT_VERSION | tr -cd '[:alnum:]-')-$(( ( RANDOM % 99 )  + 1 ))"
+        echo "::set-output name=name::testing-$VERSION_STR"
+
+    - name: Create GKE cluster
       uses: ./.github/actions/gcloud
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
-        cluster: testing-git-931bb022-85
+        cluster: ${{ steps.cluster-name.outputs.name }}

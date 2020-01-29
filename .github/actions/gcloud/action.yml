@@ -8,7 +8,7 @@ inputs:
   gcp_zone:
     required: true
   cluster:
-    required: true
+    required: false
 runs:
   using: node12
   main: main.js
