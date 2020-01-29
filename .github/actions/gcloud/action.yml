@@ -11,4 +11,4 @@ inputs:
     required: true
 runs:
   using: node12
-  image: main.js
+  main: main.js
