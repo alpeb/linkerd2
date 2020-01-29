@@ -35,7 +35,7 @@ jobs:
 
   hello_world_job:
     runs-on: ubuntu-latest
-    name: A job to say hello
+    name: Create cluster
     steps:
 
     - name: Checkout code
@@ -57,10 +57,20 @@ jobs:
         VERSION_STR="$(echo $CLIENT_VERSION | tr -cd '[:alnum:]-')-$(( ( RANDOM % 99 )  + 1 ))"
         echo "::set-output name=name::testing-$VERSION_STR"
 
-    - name: Create GKE cluster
-      uses: ./.github/actions/gcloud
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
-        gcp_project: ${{ secrets.GCP_PROJECT }}
-        gcp_zone: ${{ secrets.GCP_ZONE }}
-        cluster: ${{ steps.cluster-name.outputs.name }}
+    #- name: Create GKE cluster
+    #  uses: ./.github/actions/gcloud
+    #  with:
+    #    cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
+    #    gcp_project: ${{ secrets.GCP_PROJECT }}
+    #    gcp_zone: ${{ secrets.GCP_ZONE }}
+    #    cluster: ${{ steps.cluster-name.outputs.name }}
+
+  another_job:
+    runs-on: ubuntu-latest
+    name: Tear down cluster
+    steps:
+      - name: Tear down cluster
+        env:
+          CLUSTER_NAME: ${{ steps.cluster-name.outputs.name }}
+        run: |
+          echo $CLUSTER_NAME
