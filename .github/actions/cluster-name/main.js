@@ -30,7 +30,7 @@ async function run() {
     }
     console.log('Installed Linkerd CLI version', tag)
 
-    // last part is to distinguish runs on the same sha
+    // last part is to distinguish runs on the same sha (run-id is unique per CI run)
     var name = `testing-${tag}-${core.getInput('run-id')}`;
     console.log('name', name);
     core.setOutput('name', name);
