@@ -1,6 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const exec = require('@actions/exec');
+var fs = require('fs');
 
 try {
   // `who-to-greet` input defined in action metadata file
@@ -10,7 +11,12 @@ try {
   const payload = JSON.stringify(github.context.payload, undefined, 2);
   //console.log(`The event payload: ${payload}`);
 
-  exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
+  fs.writeFile(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'), function (err) {
+    if (err) throw err;
+    console.log('File is created successfully.');
+  }); 
+
+  //exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
   //exec.exec('echo "foo"');
   //exec.exec('node -version');
   //echo "$CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
