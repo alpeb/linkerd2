@@ -8,42 +8,46 @@ on:
     tags:
     - "*"
 
-# Jobs by event type and dependencies:
-
-# Unit tests for every master/tag push and PR
-#
-# validate_go_deps
-# go_unit_tests
-# go_lint
-# js_unit_tests
-
-# Docker build and integration tests for every master/tag push and linkerd org PR
-#
-# docker_pull
-# docker_build
-# kind_setup
-#   -> kind_integration
-#     -> kind_cleanup
-
-# Docker deploy and cloud integration tests for every master/tag push
-#
-#       -> docker_deploy
-#         -> cloud_integration
-#           -> cloud_cleanup
-
 jobs:
 
-  hello_world_job:
-    runs-on: ubuntu-latest
-    name: A job to say hello
+  foobar:
+    name: Docker build
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Hello world action step
-      id: hello
+    - name: Docker build
+      run: |
+        export PATH="`pwd`/bin:$PATH"
+        DOCKER_TRACE=1 bin/docker-build
+    - name: Configure gcloud
       uses: ./.github/actions/gcloud
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
         cluster: testing-git-931bb022-85
+    - name: Docker push
+      run: |
+        export PATH="`pwd`/bin:$PATH"
+        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
+        bin/docker-push-deps
+        bin/docker-push $TAG
+    - name: Install linkerd CLI
+      run: |
+        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
+        image="gcr.io/linkerd-io/cli-bin:$TAG"
+        id=$(bin/docker create $image)
+        bin/docker cp "$id:/out/linkerd-linux" "$HOME/.linkerd"
+        $HOME/.linkerd version --client
+        # validate CLI version matches the repo
+        [[ "$TAG" == "$($HOME/.linkerd version --short --client)" ]]
+        echo "Installed Linkerd CLI version: $TAG"
+    - name: Run integration tests
+      env:
+        GITCOOKIE_SH: ${{ secrets.GITCOOKIE_SH }}
+      run: |
+        export PATH="`pwd`/bin:$PATH"
+        echo "$GITCOOKIE_SH" | bash
+        version="$($HOME/.linkerd version --client --short | tr -cd '[:alnum:]-')"
+        bin/test-run $HOME/.linkerd linkerd-$version
