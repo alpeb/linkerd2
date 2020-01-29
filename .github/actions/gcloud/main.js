@@ -16,10 +16,10 @@ try {
   }); 
 
   //exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
-  exec.exec('cat /home/runner/.gcp.json');
+  //exec.exec('cat /home/runner/.gcp.json');
   //exec.exec('node -version');
   //echo "$CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
-  //await exec.exec('gcloud auth activate-service-account --key-file .gcp.json');
+  exec.exec(`gcloud auth activate-service-account --key-file ${process.env.HOME}/.gcp.json`);
 } catch (error) {
   core.setFailed(error.message);
 }
