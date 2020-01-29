@@ -17,6 +17,3 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
 . "$dir/path.bash.inc"
 gcloud auth configure-docker
 bin/kubectl version --short
-
-# so that it's modifiable by the runner's user
-chmod -R 777 $HOME/.config/gcloud
