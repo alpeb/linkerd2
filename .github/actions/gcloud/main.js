@@ -8,7 +8,8 @@ async function configure() {
     await exec.exec(`gcloud config set compute/zone "${core.getInput('gcp_zone')}"`);
     await exec.exec(`gcloud config set container/cluster "${core.getInput('cluster')}"`);
     await exec.exec(`gcloud container clusters get-credentials "${core.getInput('cluster')}"`);
-    exec.exec('gcloud auth configure-docker');
+    //await exec.exec('gcloud auth configure-docker');
+    await exec.exec('gcloud auth');
 }
 
 try {
