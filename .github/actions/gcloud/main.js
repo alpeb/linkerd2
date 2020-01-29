@@ -9,7 +9,7 @@ async function configure() {
     await exec.exec(`gcloud config set container/cluster "${core.getInput('cluster')}"`);
     await exec.exec(`gcloud container clusters get-credentials "${core.getInput('cluster')}"`);
     await exec.exec('gcloud auth configure-docker --quiet');
-    await exec.exec('gcloud config get-value account', {
+    await exec.exec('gcloud config get-value account', [], {
       listeners: {
         stdout: (data) => {
           console.log("DATA: ", data.toString())
