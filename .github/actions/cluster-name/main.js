@@ -1,4 +1,5 @@
 const core = require('@actions/core');
+const exec = require('@actions/exec');
 const github = require('@actions/github');
 
 async function run() {
@@ -36,7 +37,7 @@ async function run() {
 }
 
 try {
-    console.log('run-id', github.context.run_id);
+    console.log('run_id', github.context.run_id);
     run()
 } catch (error) {
     core.setFailed(error.message);

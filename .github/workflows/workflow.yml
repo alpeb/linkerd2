@@ -45,7 +45,7 @@ jobs:
       run: |
         bin/build-cli-bin
 
-    - name: Create cluster name
+    - name: Set cluster name
       id: cluster-name
       uses: ./.github/actions/cluster-name
 
