@@ -33,13 +33,7 @@ on:
 
 jobs:
 
-  #
-  # Unit tests run for:
-  # - every master push
-  # - every tag push
-  # - every PR
-  #
-hello_world_job:
+  hello_world_job:
     runs-on: ubuntu-latest
     name: A job to say hello
     steps:
