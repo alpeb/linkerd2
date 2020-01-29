@@ -11,7 +11,8 @@ try {
   console.log(`The event payload: ${payload}`);
 
   //await exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
-  await exec.exec('echo "foo"');
+  //await exec.exec('echo "foo"');
+  await exec.exec('node -version');
   //echo "$CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
   //await exec.exec('gcloud auth activate-service-account --key-file .gcp.json');
 } catch (error) {
