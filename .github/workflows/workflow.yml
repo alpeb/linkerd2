@@ -43,7 +43,6 @@ jobs:
       id: hello
       uses: ./.github/actions/gcloud
       with:
-        who-to-greet: 'Mona the Octocat'
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
