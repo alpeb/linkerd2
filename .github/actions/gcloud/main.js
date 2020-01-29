@@ -11,7 +11,7 @@ async function configure() {
 
     // The command outputs some text that blocks the runner, so gotta pipe to null
     //await exec.exec('/bin/bash', ['-c', 'gcloud auth configure-docker > /dev/null']);
-    await exec.exec('gcloud auth configure-docker --quiet']);
+    await exec.exec('gcloud auth configure-docker --quiet');
 }
 
 try {
