@@ -9,14 +9,15 @@ async function configure() {
     await exec.exec(`gcloud config set container/cluster "${core.getInput('cluster')}"`);
     await exec.exec(`gcloud container clusters get-credentials "${core.getInput('cluster')}"`);
     await exec.exec('gcloud auth configure-docker --quiet');
+    var sa;
     await exec.exec('gcloud config get-value account', [], {
       listeners: {
         stdout: (data) => {
-          console.log("DATA: ", data.toString())
+          sa = data.toString()
         }
       }
     });
-    await exec.exec(`kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin --user=test-ci-eraseme@linkerd-io.iam.gserviceaccount.com`);
+    await exec.exec(`kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin --user=${sa}`);
 }
 
 try {
