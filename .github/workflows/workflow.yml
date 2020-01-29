@@ -42,8 +42,8 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Build CLI
-       run: |
-         bin/build-cli-bin
+      run: |
+        bin/build-cli-bin
 
     - name: Create cluster name
       id: cluster-name
