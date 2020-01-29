@@ -1,0 +1,14 @@
+name: gcloud
+description: Configure gcloud
+inputs:
+  cloud_sdk_service_account_key:
+    required: true
+  gcp_project:
+    required: true
+  gcp_zone:
+    required: true
+  cluster:
+    required: true
+runs:
+  using: node12
+  image: main.js
