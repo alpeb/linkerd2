@@ -10,8 +10,8 @@ try {
   const payload = JSON.stringify(github.context.payload, undefined, 2);
   //console.log(`The event payload: ${payload}`);
 
-  //await exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
-  exec.exec('echo "foo"');
+  exec.exec('echo "' + core.getInput('cloud_sdk_service_account_key') + '" > ' + process.env.HOME + '/.gcp.json');
+  //exec.exec('echo "foo"');
   //exec.exec('node -version');
   //echo "$CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
   //await exec.exec('gcloud auth activate-service-account --key-file .gcp.json');
