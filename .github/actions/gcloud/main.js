@@ -7,8 +7,10 @@ async function configure() {
     await exec.exec(`gcloud config set core/project "${core.getInput('gcp_project')}"`);
     await exec.exec(`gcloud config set compute/zone "${core.getInput('gcp_zone')}"`);
     await exec.exec(`gcloud config set container/cluster "${core.getInput('cluster')}"`);
-    await exec.exec('gcloud auth configure-docker > /dev/null');
     await exec.exec(`gcloud container clusters get-credentials "${core.getInput('cluster')}"`);
+
+    // The command outputs some text that blocks the runner, so gotta pipe to null
+    await exec.exec('/bin/bash', ['-c-', 'gcloud auth configure-docker', '>', '/dev/null']);
 }
 
 try {
