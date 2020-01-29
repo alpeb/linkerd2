@@ -10,7 +10,7 @@ async function configure() {
     await exec.exec(`gcloud container clusters get-credentials "${core.getInput('cluster')}"`);
 
     // The command outputs some text that blocks the runner, so gotta pipe to null
-    await exec.exec('/bin/bash', ['-c', 'gcloud auth configure-docker', '2>', '/dev/null']);
+    await exec.exec('/bin/bash', ['-c', 'gcloud auth configure-docker > /dev/null']);
 }
 
 try {
