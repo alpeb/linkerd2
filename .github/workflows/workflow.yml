@@ -47,18 +47,7 @@ jobs:
 
     - name: Create cluster name
       id: cluster-name
-      env:
-        RUN_ID: ${{ github.run_id }}
-      run: |
-        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
-        CLIENT_VERSION=$(target/cli/linux/linkerd version --client --short)
-        # validate CLI version matches the repo
-        [[ "$TAG" == "$CLIENT_VERSION" ]]
-        echo "Installed Linkerd CLI version: $TAG"
-        # last part is to distinguish runs on the same sha
-        VERSION_STR="$(echo $CLIENT_VERSION | tr -cd '[:alnum:]-')-${RUN_ID: -4}"
-        echo $VERSION_STR
-        echo "::set-output name=name::testing-$VERSION_STR"
+      uses: ./.github/actions/cluster-name
 
     #- name: Create GKE cluster
     #  uses: ./.github/actions/gcloud

@@ -1,0 +1,8 @@
+name: cluster-name
+description: Generate cluster name
+outputs:
+  name:
+    description: The computed cluster name
+runs:
+  using: node12
+  main: main.js
