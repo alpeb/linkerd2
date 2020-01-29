@@ -68,17 +68,29 @@ jobs:
     #    gcp_zone: ${{ secrets.GCP_ZONE }}
     #    cluster: ${{ steps.cluster-name.outputs.name }}
 
-  #another_job:
-  #  runs-on: ubuntu-latest
-  #  name: Tear down cluster
-  #  needs: hello_world_job
-  #  steps:
-  #  - name: Build CLI
-  #    run: |
-  #      bin/build-cli-bin
+  another_job:
+    runs-on: ubuntu-latest
+    name: Tear down cluster
+    needs: hello_world_job
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build CLI
+      run: |
+        bin/build-cli-bin
         
-  #  - name: Tear down cluster
-  #    env:
-  #      CLUSTER_NAME: ${{ steps.cluster-name.outputs.name }}
-  #    run: |
-  #      echo $CLUSTER_NAME
+    - name: Tear down cluster
+      env:
+        RUN_ID: ${{ github.run_id }}
+      run: |
+        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
+        CLIENT_VERSION=$(target/cli/linux/linkerd version --client --short)
+        # validate CLI version matches the repo
+        [[ "$TAG" == "$CLIENT_VERSION" ]]
+        echo "Installed Linkerd CLI version: $TAG"
+        # last part is to distinguish runs on the same sha
+        VERSION_STR="$(echo $CLIENT_VERSION | tr -cd '[:alnum:]-')-${RUN_ID: -4}"
+        echo $VERSION_STR
+        echo "::set-output name=name::testing-$VERSION_STR"
