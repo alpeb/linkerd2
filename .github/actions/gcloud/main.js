@@ -4,6 +4,7 @@ const exec = require('@actions/exec');
 var fs = require('fs');
 
 async function configure() {
+    await exec.exec(`gcloud components install kubectl`);
     await exec.exec(`gcloud auth activate-service-account --key-file ${process.env.HOME}/.gcp.json`);
     await exec.exec(`gcloud config set core/project "${core.getInput('gcp_project')}"`);
     await exec.exec(`gcloud config set compute/zone "${core.getInput('gcp_zone')}"`);
