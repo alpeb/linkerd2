@@ -57,10 +57,8 @@ jobs:
         create: true
 
     - name: Foo1.01
-      run: echo $PATH
+      run: echo gcloud config list
 
-    - name: Foo1.1
-      run: gcloud version
     #- name: Foo2
     #  uses: ./.github/actions/gcloud
     #  with:
