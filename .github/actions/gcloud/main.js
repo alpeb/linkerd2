@@ -38,37 +38,41 @@ async function getClusterName() {
 }
 
 async function configure() {
-  await exec.exec('gcloud auth activate-service-account', ['--key-file',  `${process.env.HOME}/.gcp.json`]);
-  await exec.exec('gcloud config set core/project', [core.getInput('gcp_project')]);
-  await exec.exec('gcloud config set compute/zone', [core.getInput('gcp_zone')]);
-  await exec.exec('gcloud auth configure-docker --quiet');
+  try {
+    await exec.exec('gcloud auth activate-service-account', ['--key-file',  `${process.env.HOME}/.gcp.json`]);
+    await exec.exec('gcloud config set core/project', [core.getInput('gcp_project')]);
+    await exec.exec('gcloud config set compute/zone', [core.getInput('gcp_zone')]);
+    await exec.exec('gcloud auth configure-docker --quiet');
 
-  if (core.getInput('create') || core.getInput('destroy')) {
-    const name = await getClusterName();
-    if (core.getInput('create')) {
-      await exec.exec('gcloud container clusters create',
-        [name, '--cluster-version', '1.15.7-gke.23', '--num-nodes', 1, '--machine-tyiiipe', 'n1-standard-2', '--enable-network-policy']);
-      await exec.exec('gcloud config set container/cluster',  [name]);
-      await exec.exec('gcloud container clusters get-credentials', [name]);
+    if (core.getInput('create') || core.getInput('destroy')) {
+      const name = await getClusterName();
+      if (core.getInput('create')) {
+        await exec.exec('gcloud container clusters create',
+          [name, '--cluster-version', '1.15.7-gke.23', '--num-nodes', 1, '--machine-tyiiipe', 'n1-standard-2', '--enable-network-policy']);
+        await exec.exec('gcloud config set container/cluster',  [name]);
+        await exec.exec('gcloud container clusters get-credentials', [name]);
 
-      let sa;
-      await exec.exec('gcloud config get-value account', [], {
-        listeners: {
-          stdout: (data) => {
-            sa = data.toString()
+        let sa;
+        await exec.exec('gcloud config get-value account', [], {
+          listeners: {
+            stdout: (data) => {
+              sa = data.toString()
+            }
           }
-        }
-      });
-      await exec.exec('kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin', ['--user', sa]);
-    } else {
-      await exec.exec('gcloud container clusters delete --quiet', [name]);
+        });
+        await exec.exec('kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin', ['--user', sa]);
+      } else {
+        await exec.exec('gcloud container clusters delete --quiet', [name]);
+      }
     }
+  } catch (e) {
+    core.setFailed(e.message)
   }
 }
 
 try {
     fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
-    await configure()
+    configure()
 } catch (e) {
     core.setFailed(e.message);
 }
