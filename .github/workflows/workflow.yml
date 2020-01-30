@@ -92,7 +92,7 @@ jobs:
   testing:
     name: TESTING
     runs-on: ubuntu-18.04
-    #needs: [docker_deploy]
+    needs: [docker_deploy]
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
