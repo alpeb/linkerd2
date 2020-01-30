@@ -13,7 +13,7 @@ inputs:
     required: false
   run-id:
     required: false
-    default: ${{ github.context.run_id }}
+    default: ${{ github.run_id }}
 runs:
   using: node12
   main: main.js
