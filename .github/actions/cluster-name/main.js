@@ -28,16 +28,17 @@ async function run() {
     if (tag != clientVersion) {
         core.setFailed(`tag ${tag} differs from clientversion ${clientVersion}`)
     }
-    console.log('Installed Linkerd CLI version', tag)
+    console.log('Installed Linkerd CLI version:', tag)
 
-    // last part is to distinguish runs on the same sha (run-id is unique per CI run)
+    // Last part is to distinguish runs on the same sha (run-id is unique per CI run).
+    // run-id has to be provided as an input because it turns out it's not available
+    // through github.context.run_id
     var name = `testing-${tag}-${core.getInput('run-id')}`;
-    console.log('name', name);
+    console.log('name:', name);
     core.setOutput('name', name);
 }
 
 try {
-    console.log('run_id', github.context);
     run()
 } catch (error) {
     core.setFailed(error.message);
