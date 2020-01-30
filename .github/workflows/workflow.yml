@@ -55,6 +55,9 @@ jobs:
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
         create: true
+
+    - name: Foo1.1
+      run: gcloud version
     #- name: Foo2
     #  uses: ./.github/actions/gcloud
     #  with:

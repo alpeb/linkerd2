@@ -10,7 +10,7 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
     install_gcloud "$dir"
     gcloud components install kubectl
 )
-
+. "$dir/path.bash.inc"
 gcloud auth configure-docker
-
+echo $PATH
 gcloud version
