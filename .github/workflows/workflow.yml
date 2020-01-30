@@ -74,7 +74,6 @@ jobs:
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
     - name: Docker SSH setup
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       run: |
         mkdir -p ~/.ssh/
         touch ~/.ssh/id && chmod 600 ~/.ssh/id
