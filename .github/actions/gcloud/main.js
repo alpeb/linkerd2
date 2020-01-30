@@ -16,7 +16,7 @@ async function getClusterName() {
   });
 
   var clientVersion;
-  await exec.exec('target/cli/linux/linkerd', ['version', '--client', '--short'], {
+  await exec.exec(`${process.env.HOME}/.linkerd`, ['version', '--client', '--short'], {
       listeners: {
           stdout: (data) => {
               clientVersion = data.toString().trim()
