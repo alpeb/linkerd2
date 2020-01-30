@@ -45,22 +45,17 @@ jobs:
     #  run: |
     #    bin/build-cli-bin
 
-    - name: Foo0
-      run: gcloud version
-
     - name: Foo1
       uses: ./.github/actions/gcloud2
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
-        create: true
 
-    - name: Foo1.01
-      env:
-        CLOUDSDK_CONFIG: /home/runner/work/_temp/_github_home/.config/gcloud
+    - name: Foo1.1
       run: |
-        gcloud container clusters create foobar --cluster-version 1.15.7-gke.23 --num-nodes=1 --machine-type n1-standard-2 --enable-network-policy
+        DOCKER_TRACE=1 bin/docker-build-base
+        docker push gcr.io/linkerd-io/base:2019-09-04.01
 
     #- name: Foo2
     #  uses: ./.github/actions/gcloud
