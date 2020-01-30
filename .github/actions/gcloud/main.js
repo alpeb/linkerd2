@@ -47,7 +47,7 @@ async function configure() {
       const name = await getClusterName();
       if (core.getInput('create')) {
         await exec.exec('gcloud container clusters create',
-          [name, '--cluster-version', '1.15.7-gke.23', '--num-nodes', 1, '--machine-type', 'n1-standard-2', '--enable-network-policy']);
+          [name, '--cluster-version', '1.15.7-gke.23', '--num-nodes', 1, '--machine-tyiiipe', 'n1-standard-2', '--enable-network-policy']);
         await exec.exec('gcloud config set container/cluster',  [name]);
         await exec.exec('gcloud container clusters get-credentials', [name]);
 
@@ -59,7 +59,7 @@ async function configure() {
             }
           }
         });
-        await exec.exec('kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin', [`--user=${sa}`]);
+        await exec.exec('kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin', ['--user', sa]);
       } else {
         await exec.exec('gcloud container clusters delete --quiet', [name]);
       }
