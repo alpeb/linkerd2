@@ -13,6 +13,6 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
 . "$dir/path.bash.inc"
 gcloud auth configure-docker
 echo $GITHUB_WORKSPACE
-//echo "::add-path::/path/to/dir"
+echo "::add-path::/home/runner/work/_temp/_github_home/google-cloud-sdk/bin"
 echo $PATH
 gcloud version
