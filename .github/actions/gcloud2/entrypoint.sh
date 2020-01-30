@@ -2,12 +2,6 @@
 
 set -eu
 
-echo "PATH:"
-echo $PATH
-
-pwd
-ls -la
-
 # Install gcloud and kubectl.
 echo "$INPUT_CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
 dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
@@ -16,5 +10,7 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
     install_gcloud "$dir"
     gcloud components install kubectl
 )
-. "$dir/path.bash.inc"
+
 gcloud auth configure-docker
+
+gcloud version

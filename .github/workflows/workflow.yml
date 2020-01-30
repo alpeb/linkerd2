@@ -45,6 +45,9 @@ jobs:
     #  run: |
     #    bin/build-cli-bin
 
+    - name: Foo0
+      run: gcloud version
+
     - name: Foo1
       uses: ./.github/actions/gcloud2
       with:
