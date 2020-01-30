@@ -1,7 +1,6 @@
 const core = require('@actions/core');
 const exec = require('@actions/exec');
-const github = require('@actions/github');
-var fs = require('fs');
+const fs = require('fs');
 
 async function getClusterName() {
   var tag;
@@ -34,7 +33,6 @@ async function getClusterName() {
   // Last part is to distinguish runs on the same sha (run-id is unique per CI run).
   // run-id has to be provided as an input because it turns out it's not available
   // through github.context.run_id
-  console.log('****** GITHUB:', github);
   var name = `testing-${tag}-${core.getInput('run-id')}`;
   console.log('Cluster name: ', name);
   return name;

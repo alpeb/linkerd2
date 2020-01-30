@@ -41,21 +41,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Build CLI
-      run: |
-        bin/build-cli-bin
+    #- name: Build CLI
+    #  run: |
+    #    bin/build-cli-bin
 
     - name: Foo1
-      uses: ./.github/actions/gcloud
+      uses: ./.github/actions/gcloud2
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
         create: true
-    - name: Foo2
-      uses: ./.github/actions/gcloud
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
-        gcp_project: ${{ secrets.GCP_PROJECT }}
-        gcp_zone: ${{ secrets.GCP_ZONE }}
-        destroy: true
+    #- name: Foo2
+    #  uses: ./.github/actions/gcloud
+    #  with:
+    #    cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
+    #    gcp_project: ${{ secrets.GCP_PROJECT }}
+    #    gcp_zone: ${{ secrets.GCP_ZONE }}
+    #    destroy: true
