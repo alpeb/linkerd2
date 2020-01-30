@@ -3,38 +3,42 @@ const exec = require('@actions/exec');
 const fs = require('fs');
 
 async function getClusterName() {
-  let tag, clientVersion;
-  await exec.exec('bin/root-tag', [], {
-      env: {
-          CI_FORCE_CLEAN: 1
-      },
-      listeners: {
-          stdout: (data) => {
-              tag = data.toString().trim()
-          }
-      }
-  });
+  try {
+    let tag, clientVersion;
+    await exec.exec('bin/root-tag', [], {
+        env: {
+            CI_FORCE_CLEAN: 1
+        },
+        listeners: {
+            stdout: (data) => {
+                tag = data.toString().trim()
+            }
+        }
+    });
 
-  await exec.exec(`${process.env.HOME}/.linkerd version --client --short`, [], {
-      listeners: {
-          stdout: (data) => {
-              clientVersion = data.toString().trim()
-          }
-      }
-  });
+    await exec.exec(`${process.env.HOME}/.linkerdd version --client --short`, [], {
+        listeners: {
+            stdout: (data) => {
+                clientVersion = data.toString().trim()
+            }
+        }
+    });
 
-  // validate CLI version matches the repo
-  if (tag != clientVersion) {
-      throw `tag ${tag} differs from clientversion ${clientVersion}`
+    // validate CLI version matches the repo
+    if (tag != clientVersion) {
+        throw `tag ${tag} differs from clientversion ${clientVersion}`
+    }
+    console.log('Linkerd CLI version:', tag)
+
+    // Last part is to distinguish runs on the same sha (run-id is unique per CI run).
+    // run-id has to be provided as an input because it turns out it's not available
+    // through github.context.run_id
+    const name = `testing-${tag}-${core.getInput('run-id')}`;
+    console.log('Cluster name:', name);
+    return name;
+  } catch (e) {
+    core.setFailed(e.message)
   }
-  console.log('Linkerd CLI version:', tag)
-
-  // Last part is to distinguish runs on the same sha (run-id is unique per CI run).
-  // run-id has to be provided as an input because it turns out it's not available
-  // through github.context.run_id
-  const name = `testing-${tag}-${core.getInput('run-id')}`;
-  console.log('Cluster name:', name);
-  return name;
 }
 
 async function configure() {
@@ -66,7 +70,7 @@ async function configure() {
       }
     }
   } catch (e) {
-    console.log("************************** ERRROR")
+    core.setFailed(e.message)
   }
 }
 
