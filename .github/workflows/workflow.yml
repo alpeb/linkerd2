@@ -45,7 +45,8 @@ jobs:
       run: |
         bin/build-cli-bin
 
-    - name: Foo1
+    - &foobar
+      name: Foo1
       uses: ./.github/actions/gcloud
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
@@ -53,11 +54,4 @@ jobs:
         gcp_zone: ${{ secrets.GCP_ZONE }}
         create: true
         run-id: ${{ github.run_id }}
-    - name: Foo2
-      uses: ./.github/actions/gcloud
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
-        gcp_project: ${{ secrets.GCP_PROJECT }}
-        gcp_zone: ${{ secrets.GCP_ZONE }}
-        destroy: true
-        run-id: ${{ github.run_id }}
+    - *foobar
