@@ -60,7 +60,7 @@ async function configure() {
         });
         await exec.exec(`kubectl create clusterrolebinding ci-cluster-admin --clusterrole=cluster-admin --user=${sa}`);
       } else {
-        await exec.exec(`gcloud container clusters delete ${name}`)
+        await exec.exec(`gcloud container clusters delete ${name} --quiet`)
       }
     }
 }
