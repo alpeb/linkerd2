@@ -68,7 +68,7 @@ async function configure() {
 
 try {
     fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
-    configure()
+    await configure()
 } catch (e) {
     core.setFailed(e.message);
 }
