@@ -51,3 +51,4 @@ jobs:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
+        create: true
