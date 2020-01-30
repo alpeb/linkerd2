@@ -66,7 +66,7 @@ async function configure() {
       }
     }
   } catch (e) {
-    throw e
+    console.log("************************** ERRROR")
   }
 }
 
