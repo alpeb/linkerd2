@@ -47,7 +47,7 @@ async function configure() {
       const name = await getClusterName();
       if (core.getInput('create')) {
         await exec.exec('gcloud container clusters create',
-          [name, '--cluster-version 1.15.7-gke.23', '--num-nodes=1', '--machine-type n1-standard-2', '--enable-network-policy']);
+          [name, '--cluster-version', '1.15.7-gke.23', '--num-nodes', 1, '--machine-type', 'n1-standard-2', '--enable-network-policy']);
         await exec.exec('gcloud config set container/cluster',  [name]);
         await exec.exec('gcloud container clusters get-credentials', [name]);
 
@@ -67,9 +67,8 @@ async function configure() {
 }
 
 try {
-  fs.writeFile(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'), function (err) {
-      configure()
-  }); 
+    fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
+    configure()
 } catch (error) {
     core.setFailed(error.message);
 }
