@@ -15,3 +15,4 @@ dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
 gcloud auth configure-docker
 echo "::add-path::/home/runner/work/_temp/_github_home/google-cloud-sdk/bin"
 gcloud config list
+gcloud info

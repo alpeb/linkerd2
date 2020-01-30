@@ -57,7 +57,9 @@ jobs:
         create: true
 
     - name: Foo1.01
-      run: gcloud config list
+      run: |
+        gcloud config list
+        gcloud info
 
     #- name: Foo2
     #  uses: ./.github/actions/gcloud
