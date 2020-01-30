@@ -7,7 +7,11 @@ inputs:
     required: true
   gcp_zone:
     required: true
-  cluster:
+  create:
+    required: false
+  destroy:
+    required: false
+  run-id:
     required: false
 runs:
   using: node12
