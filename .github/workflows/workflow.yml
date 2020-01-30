@@ -58,7 +58,7 @@ jobs:
 
     - name: Foo1.01
       env:
-        CLOUDSDK_CONFIG=/home/runner/work/_temp/_github_home/.config/gcloud
+        CLOUDSDK_CONFIG: /home/runner/work/_temp/_github_home/.config/gcloud
       run: |
         gcloud config list
         gcloud info
