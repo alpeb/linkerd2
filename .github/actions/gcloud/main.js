@@ -10,7 +10,7 @@ async function getClusterName() {
       },
       listeners: {
           stdout: (data) => {
-              tag = data.toString()
+              tag = data.toString().trim()
           }
       }
   });
@@ -45,7 +45,7 @@ async function configure() {
     await exec.exec('gcloud auth configure-docker --quiet');
 
     if (core.getInput('create') || core.getInput('destroy')) {
-      var name = await getClusterName();
+      var name = await dgetClusterName();
       if (core.getInput('create')) {
         await exec.exec(`gcloud container clusters create ${name} --cluster-version 1.15.7-gke.23 --num-nodes=1 --machine-type n1-standard-2 --enable-network-policy`);
         await exec.exec(`gcloud config set container/cluster "${name}"`);
