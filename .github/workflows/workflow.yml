@@ -33,11 +33,31 @@ on:
 
 jobs:
 
-
+  docker_build:
+    name: Docker build
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Docker SSH setup
+      run: |
+        mkdir -p ~/.ssh/
+        touch ~/.ssh/id && chmod 600 ~/.ssh/id
+        echo "${{ secrets.DOCKER_SSH_CONFIG }}"  > ~/.ssh/config
+        echo "${{ secrets.DOCKER_PRIVATE_KEY }}" > ~/.ssh/id
+        echo "${{ secrets.DOCKER_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+        ssh linkerd-docker docker version
+    - name: Docker build
+      env:
+        DOCKER_HOST: ssh://linkerd-docker
+      run: |
+        export PATH="`pwd`/bin:$PATH"
+        DOCKER_TRACE=1 bin/docker-build
 
   docker_deploy:
     name: Docker deploy
     runs-on: ubuntu-18.04
+    needs: [docker_build]
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -63,8 +83,8 @@ jobs:
         TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
         bin/docker-push-deps
         bin/docker-push $TAG
-        bin/docker-retag-all $TAG master
-        bin/docker-push master
+        #bin/docker-retag-all $TAG master
+        #bin/docker-push master
 
   cloud_integration:
     name: Cloud integration tests
