@@ -94,8 +94,8 @@ jobs:
     runs-on: ubuntu-18.04
     #needs: [docker_deploy]
     steps:
- #   - name: Checkout code
- #     uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
  #   - name: Install linkerd CLI
  #     run: |
  #       TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
