@@ -4,7 +4,9 @@ set -eu
 
 echo "PATH:"
 echo $PATH
-gcloud version
+
+pwd
+ls -la
 
 # Install gcloud and kubectl.
 echo "$INPUT_CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
