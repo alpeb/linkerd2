@@ -19,7 +19,7 @@ async function getClusterName() {
   await exec.exec('target/cli/linux/linkerd', ['version', '--client', '--short'], {
       listeners: {
           stdout: (data) => {
-              clientVersion = data.toString()
+              clientVersion = data.toString().trim()
           }
       }
   });
