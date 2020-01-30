@@ -18,4 +18,4 @@ inputs:
     default: ${{ github.run_id }}
 runs:
   using: node12
-  main: main.js
+  main: dist/index.js
