@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const exec = require('@actions/exec');
-const exec = require('@actions/github');
+const github = require('@actions/github');
 var fs = require('fs');
 
 async function getClusterName() {
