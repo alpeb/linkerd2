@@ -60,8 +60,7 @@ jobs:
       env:
         CLOUDSDK_CONFIG: /home/runner/work/_temp/_github_home/.config/gcloud
       run: |
-        gcloud config list
-        gcloud info
+        gcloud container clusters create foobar --cluster-version 1.15.7-gke.23 --num-nodes=1 --machine-type n1-standard-2 --enable-network-policy
 
     #- name: Foo2
     #  uses: ./.github/actions/gcloud
