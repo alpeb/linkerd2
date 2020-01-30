@@ -27,7 +27,7 @@ on:
 
 # Docker deploy and cloud integration tests for every master/tag push
 #
-#         -> cloud_integsration
+#         -> cloud_integration
 #           -> cloud_cleanup
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
   cloud_integration:
     name: TESTING
     runs-on: ubuntu-18.04
-    steps:s
+    steps:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Install linkerd CLI
