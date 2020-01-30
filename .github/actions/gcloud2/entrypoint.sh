@@ -2,6 +2,10 @@
 
 set -eu
 
+echo "PATH:"
+echo $PATH
+gcloud version
+
 # Install gcloud and kubectl.
 echo "$INPUT_CLOUD_SDK_SERVICE_ACCOUNT_KEY" > .gcp.json
 dir="${CLOUDSDK_INSTALL_DIR:-${HOME}}/google-cloud-sdk"
