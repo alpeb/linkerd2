@@ -38,6 +38,7 @@ async function getClusterName() {
 }
 
 async function configure() {
+  try {
     await exec.exec('gcloud auth activate-service-account', ['--key-file',  `${process.env.HOME}/.gcp.json`]);
     await exec.exec('gcloud config set core/project', [core.getInput('gcp_project')]);
     await exec.exec('gcloud config set compute/zone', [core.getInput('gcp_zone')]);
@@ -64,11 +65,14 @@ async function configure() {
         await exec.exec('gcloud container clusters delete --quiet', [name]);
       }
     }
+  } catch (e) {
+    throw e
+  }
 }
 
 try {
     fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
     configure()
-} catch (error) {
-    core.setFailed(error.message);
+} catch (e) {
+    core.setFailed(e.message);
 }
