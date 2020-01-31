@@ -216,7 +216,7 @@ jobs:
 
   kind_setup:
     strategy:
-      max-parallel: 3
+      max-parallel: 5
       matrix:
         integration_test: [deep, upgrade, helm, custom_domain, external_issuer]
     name: Cluster setup (${{ matrix.integration_test }})
@@ -263,7 +263,7 @@ jobs:
 
   kind_integration_host:
     strategy:
-      max-parallel: 3
+      max-parallel: 5
       matrix:
         integration_test: [deep, upgrade, helm, custom_domain, external_issuer]
     needs: [docker_pull, docker_build, kind_setup]
