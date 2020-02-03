@@ -16,15 +16,15 @@ inputs:
   num_nodes:
     required: false
     default: 1
+  release_channel:
+    required: false
+    default: rapid
   cluster_version:
     required: false
     default: 1.15.7-gke.23
   preemptible:
     required: false
     default: true
-  release_channel:
-    required: false
-    default: rapid
   enable_network_policy:
     required: false
     default: true

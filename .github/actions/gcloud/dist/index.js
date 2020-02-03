@@ -328,6 +328,10 @@ function validate() {
     default:
       throw 'Invalid value for "action"';
   }
+
+  if (core.getInput('release_channel') && core.getInput('cluster_version')) {
+    throw 'At most one of --release-channel | --cluster-version may be specified';
+  }
 }
 
 async function getClusterName() {
@@ -380,10 +384,14 @@ async function configure() {
         const args = [
           name,
           '--machine-type', core.getInput('machine_type'),
-          '--num-nodes', core.getInput('num_nodes'),
-          '--cluster-version', core.getInput('cluster_version'),
-          '--release-channel', core.getInput('release_channel')
+          '--num-nodes', core.getInput('num_nodes')
         ];
+        if (core.getInput('release_channel')) {
+          args.push('--release-channel', core.getInput('release_channel'));
+        }
+        if (core.getInput('cluster_version')) {
+          args.push('--cluster-version', core.getInput('cluster_version'));
+        }
         if (core.getInput('preemptible')) {
           args.push('--preemptible');
         }
@@ -399,6 +407,8 @@ async function configure() {
         if (!core.getInput('enable_legacy_auth')) {
           args.push('--no-enable-legacy-authorization')
         }
+
+        // Needs beta in order to use --release-channel
         await exec.exec('gcloud beta container clusters create', args);
 
         await exec.exec('gcloud config set container/cluster',  [name]);
