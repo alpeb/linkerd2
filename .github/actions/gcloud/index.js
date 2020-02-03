@@ -123,7 +123,7 @@ async function run() {
     if (core.getInput('create')) {
       const name = await getClusterName();
       if (!core.getState(isPost)) {
-        core.saveState(isPost, true);
+        core.saveState(isPost, 'true');
         await create(name);
       } else {
         await destroy(name);
