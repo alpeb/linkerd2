@@ -438,8 +438,7 @@ async function run() {
       const name = await getClusterName();
       if (!core.getState(isPost)) {
         core.saveState(isPost, 'true');
-        core.setFailed("OOOPS");
-        //await create(name);
+        await create(name);
       } else {
         await destroy(name);
       }
@@ -450,11 +449,12 @@ async function run() {
 }
 
 try {
-    fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
-    validate();
-    run();
+  console.log('********* NAME: ', core.getInput('name'));
+  fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
+  validate();
+  run();
 } catch (e) {
-    core.setFailed(e.message);
+  core.setFailed(e.message);
 }
 
 

@@ -57,13 +57,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Install linkerd CLI
+      id: install_cli
       run: |
-        TAG="master"
+        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
         image="gcr.io/linkerd-io/cli-bin:$TAG"
         id=$(bin/docker create $image)
         bin/docker cp "$id:/out/linkerd-linux" "$HOME/.linkerd"
         $HOME/.linkerd version --client
         echo "Installed Linkerd CLI version: $TAG"
+        echo "::set-output name=tag::$TAG"
     - name: Create GKE cluster
       uses: ./.github/actions/gcloud
       with:
@@ -71,6 +73,7 @@ jobs:
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
         create: true
+        name: testing-${{ steps.install_cli.outpus.tag }}-${{ github.run_id }}
     - name: CNI tests
       run: |
         echo "DONE"
