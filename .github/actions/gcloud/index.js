@@ -23,6 +23,7 @@ async function getClusterName() {
       }
   });
 
+  console.log('here');
   // validate CLI version matches the repo
   if (tag !== clientVersion) {
     console.log("bad tag");
