@@ -2,6 +2,19 @@ const core = require('@actions/core');
 const exec = require('@actions/exec');
 const fs = require('fs');
 
+function validate() {
+  switch (core.getInput('action')) {
+    case 'create':
+      break;
+    case 'destroy':
+      break;
+    case '':
+      break;
+    default:
+      throw 'Invalid value for "action"';
+  }
+}
+
 async function getClusterName() {
   let tag, clientVersion;
   await exec.exec('bin/root-tag', [], {
@@ -37,19 +50,6 @@ async function getClusterName() {
   const name = `testing-${tag}-${core.getInput('run_id')}`;
   console.log('Cluster name:', name);
   return name;
-}
-
-function validate() {
-  switch (core.getInput('action')) {
-    case 'create':
-      break;
-    case 'destroy':
-      break;
-    case '':
-      break;
-    default:
-      throw 'Invalid value for "action"';
-  }
 }
 
 async function configure() {
@@ -113,6 +113,7 @@ async function configure() {
 
 try {
     fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
+    console.log("howdy")
     validate();
     configure();
 } catch (e) {
