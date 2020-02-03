@@ -317,6 +317,8 @@ const core = __webpack_require__(157);
 const exec = __webpack_require__(148);
 const fs = __webpack_require__(747);
 
+const isPost = 'STATE_isPost';
+
 function validate() {
   if (core.getInput('release_channel') && core.getInput('cluster_version')) {
     throw 'At most one of --release-channel | --cluster-version may be specified';
@@ -435,7 +437,8 @@ async function run() {
     await configure();
     if (core.getInput('create')) {
       const name = await getClusterName();
-      if (!process.env.STATE_isPost) {
+      if (!core.getState(isPost)) {
+        core.saveState(isPost, true);
         await create(name);
       } else {
         await destroy(name);

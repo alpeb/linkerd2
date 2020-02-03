@@ -2,6 +2,8 @@ const core = require('@actions/core');
 const exec = require('@actions/exec');
 const fs = require('fs');
 
+const isPost = 'STATE_isPost';
+
 function validate() {
   if (core.getInput('release_channel') && core.getInput('cluster_version')) {
     throw 'At most one of --release-channel | --cluster-version may be specified';
@@ -120,7 +122,8 @@ async function run() {
     await configure();
     if (core.getInput('create')) {
       const name = await getClusterName();
-      if (!process.env.STATE_isPost) {
+      if (!core.getState(isPost)) {
+        core.saveState(isPost, true);
         await create(name);
       } else {
         await destroy(name);
