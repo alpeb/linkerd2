@@ -124,6 +124,7 @@ async function run() {
       const name = await getClusterName();
       if (!core.getState(isPost)) {
         core.saveState(isPost, 'true');
+        core.setFailed("OOOPS");
         await create(name);
       } else {
         await destroy(name);
