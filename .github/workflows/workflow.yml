@@ -63,8 +63,6 @@ jobs:
         id=$(bin/docker create $image)
         bin/docker cp "$id:/out/linkerd-linux" "$HOME/.linkerd"
         $HOME/.linkerd version --client
-        # validate CLI version matches the repo
-        [[ "$TAG" == "$($HOME/.linkerd version --short --client)" ]]
         echo "Installed Linkerd CLI version: $TAG"
     - name: Create GKE cluster
       uses: ./.github/actions/gcloud
@@ -92,8 +90,6 @@ jobs:
         id=$(bin/docker create $image)
         bin/docker cp "$id:/out/linkerd-linux" "$HOME/.linkerd"
         $HOME/.linkerd version --client
-        # validate CLI version matches the repo
-        [[ "$TAG" == "$($HOME/.linkerd version --short --client)" ]]
         echo "Installed Linkerd CLI version: $TAG"
     - name: Destroy GKE cluster
       uses: ./.github/actions/gcloud
