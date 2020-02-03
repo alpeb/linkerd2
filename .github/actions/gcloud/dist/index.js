@@ -399,7 +399,7 @@ async function configure() {
         if (!core.getInput('enable_legacy_auth')) {
           args.push('--no-enable-legacy-authorization')
         }
-        await exec.exec('gcloud container clusters create', args);
+        await exec.exec('gcloud beta container clusters create', args);
 
         await exec.exec('gcloud config set container/cluster',  [name]);
         await exec.exec('gcloud container clusters get-credentials', [name]);
