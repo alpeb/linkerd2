@@ -61,6 +61,7 @@ async function configure() {
     await exec.exec('gcloud auth configure-docker --quiet');
 
     if (core.getInput('create') || core.getInput('destroy')) {
+      console.log("starting")
       const name = await getClusterName();
       if (core.getInput('create')) {
         const args = [
