@@ -116,6 +116,7 @@ async function destroy(name) {
 
 async function run() {
   try {
+    console.log("ENV: ", JSON.stringify(process.env));
     await configure();
     if (core.getInput('create')) {
       const name = await getClusterName();
