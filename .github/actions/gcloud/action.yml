@@ -21,7 +21,7 @@ inputs:
     default: rapid
   cluster_version:
     required: false
-    default: 1.15.7-gke.23
+    default: ''
   preemptible:
     required: false
     default: true
