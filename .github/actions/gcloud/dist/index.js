@@ -433,14 +433,13 @@ async function destroy(name) {
 
 async function run() {
   try {
-    console.log("ENV: ", JSON.stringify(process.env));
     await configure();
     if (core.getInput('create')) {
       const name = await getClusterName();
       if (!core.getState(isPost)) {
         core.saveState(isPost, 'true');
         core.setFailed("OOOPS");
-        await create(name);
+        //await create(name);
       } else {
         await destroy(name);
       }
