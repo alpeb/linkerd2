@@ -25,6 +25,7 @@ async function getClusterName() {
 
   // validate CLI version matches the repo
   if (tag !== clientVersion) {
+    console.log("bad tag");
       throw `tag ${tag} differs from client version ${clientVersion}`
   }
   console.log('Linkerd CLI version:', tag)
@@ -103,6 +104,7 @@ async function configure() {
       }
     }
   } catch (e) {
+    console.log("err0: ", e.message);
     core.setFailed(e.message)
   }
 }
@@ -112,5 +114,6 @@ try {
     validate();
     configure();
 } catch (e) {
+  console.log("err1: ", e.message);
     core.setFailed(e.message);
 }
