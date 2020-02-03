@@ -73,7 +73,7 @@ jobs:
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
         create: true
-        name: testing-${{ steps.install_cli.outpus.tag }}-${{ github.run_id }}
+        name: testing-${{ steps.install_cli.outputs.tag }}-${{ github.run_id }}
     - name: CNI tests
       run: |
         echo "DONE"
