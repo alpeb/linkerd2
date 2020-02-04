@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  uno::
+  uno:
     name: Uno
     runs-on: ubuntu-18.04
     steps:
