@@ -1,5 +1,6 @@
 const configure = require('./configure.js');
 const core = require('@actions/core');
+const exec = require('@actions/exec');
 
 async function destroy() {
   try {

@@ -102,6 +102,7 @@ module.exports = require("assert");
 
 const configure = __webpack_require__(126);
 const core = __webpack_require__(907);
+const exec = __webpack_require__(649);
 
 async function destroy() {
   try {
