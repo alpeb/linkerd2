@@ -23,7 +23,6 @@ async function run() {
 }
 
 try {
-  configure.writeKey();
   run();
 } catch (e) {
   core.setFailed(e.message);

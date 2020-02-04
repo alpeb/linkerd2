@@ -57,18 +57,14 @@ module.exports = require("os");
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "writeKey", function() { return writeKey; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "gcloud", function() { return gcloud; });
 const core = __webpack_require__(907);
 const exec = __webpack_require__(649);
 const fs = __webpack_require__(747);
 
-function writeKey() {
-  fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
-}
-
 async function gcloud() {
   try {
+    fs.writeFileSync(process.env.HOME + '/.gcp.json', core.getInput('cloud_sdk_service_account_key'));
     await exec.exec('gcloud auth activate-service-account',
       ['--key-file',  `${process.env.HOME}/.gcp.json`]);
     await exec.exec('gcloud config set core/project', [core.getInput('gcp_project')]);
@@ -125,7 +121,6 @@ async function run() {
 }
 
 try {
-  configure.writeKey();
   run();
 } catch (e) {
   core.setFailed(e.message);

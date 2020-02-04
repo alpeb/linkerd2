@@ -74,7 +74,6 @@ async function run() {
 }
 
 try {
-  configure.writeKey();
   validate();
   run();
 } catch (e) {
