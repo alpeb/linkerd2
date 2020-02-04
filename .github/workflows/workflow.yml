@@ -14,6 +14,8 @@ jobs:
     name: Uno
     runs-on: ubuntu-18.04
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
     - name: Configure gcloud
       uses: ./.github/actions/gcloud
       with:
