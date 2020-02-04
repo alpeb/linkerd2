@@ -33,15 +33,7 @@ jobs:
     - name: Install linkerd CLI
       id: install_cli
       run: |
-        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
-        image="gcr.io/linkerd-io/cli-bin:$TAG"
-        id=$(bin/docker create $image)
-        bin/docker cp "$id:/out/linkerd-linux" "$HOME/.linkerd"
-        $HOME/.linkerd version --client
-        # validate CLI version matches the repo
-        [[ "$TAG" == "$($HOME/.linkerd version --short --client)" ]]
-        echo "Installed Linkerd CLI version: $TAG"
-        echo "::set-output name=tag::$TAG"
+        echo "::set-output name=tag::foobar"
     - name: Create GKE cluster
       uses: ./.github/actions/gcloud
       with:
