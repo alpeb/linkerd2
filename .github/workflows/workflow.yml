@@ -44,6 +44,9 @@ jobs:
         gcp_project: ${{ secrets.GCP_PROJECT }}
         gcp_zone: ${{ secrets.GCP_ZONE }}
   another:
+    name: Another
+    runs-on: ubuntu-18.04
+    steps:
     - name: Create GKE cluster
       uses: linkerd/linkerd2-action-gcloud@v1
       with:
