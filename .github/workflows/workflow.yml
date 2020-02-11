@@ -80,7 +80,7 @@ jobs:
         mkdir -p $ARCHIVES
 
         for image in proxy controller web cni-plugin debug cli-bin grafana; do
-          docker save "$DOCKER_REGISTRY/$image:$TAG" > $ARCHIVES/$image.tar || tee save_fail &
+          docker save "$DOCKER_REGISTRY/$image:$TAG" > $ARCHIVES/$image.tar 2>&1 || tee -a save_fail &
         done
 
         jobs
@@ -90,6 +90,7 @@ jobs:
         # if any job failed.
         wait < <(jobs -p)
         ls -l save_fail
+        cat save_fail
         test -f save_fail && exit 1
     # `with.path` values do not support environment variables yet, so an
     # absolute path is used here.
