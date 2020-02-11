@@ -89,8 +89,9 @@ jobs:
         # Wait for `docker save` background processes to complete. Exit early
         # if any job failed.
         wait < <(jobs -p)
-        ls -l save_fail
-        cat save_fail
+        if [ -f save_fail ]; then
+          cat save_fail
+        fi
         test -f save_fail && exit 1
     # `with.path` values do not support environment variables yet, so an
     # absolute path is used here.
