@@ -72,20 +72,27 @@ jobs:
         ARCHIVES: /home/runner/archives
       run: |
         mkdir -p $ARCHIVES
+        echo "created $ARCHIVES"
 
         for image in proxy controller web cni-plugin debug cli-bin grafana; do
+          echo "saving image $image:$TAG"
           docker save "$DOCKER_REGISTRY/$image:$TAG" > $ARCHIVES/$image.tar
+          echo "saved image $image:$TAG"
         done
 
         jobs
+        echo "shown jobs"
 
 
         # Wait for `docker save` background processes to complete. Exit early
         # if any job failed.
         wait < <(jobs -p)
-        if [ -f save_fail ]; then
+        echo "finished waiting"
+        if [ -f "save_fail" ]; then
+          echo "showing save_fail"
           cat save_fail
         fi
+        echo "about to test"
         test -f save_fail && exit 1
     # `with.path` values do not support environment variables yet, so an
     # absolute path is used here.
