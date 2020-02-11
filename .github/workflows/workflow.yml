@@ -93,7 +93,7 @@ jobs:
           cat save_fail
         fi
         echo "about to test"
-        test -f save_fail && exit 1
+        test -f "save_fail" && exit 1
     # `with.path` values do not support environment variables yet, so an
     # absolute path is used here.
     #
