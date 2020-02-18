@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Create GKE cluster
-      uses: linkerd/linkerd2-action-gcloud@224cd2e
+      uses: linkerd/linkerd2-action-gcloud@7eed402
       with:
         cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
         gcp_project: ${{ secrets.GCP_PROJECT }}
