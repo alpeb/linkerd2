@@ -2,6 +2,8 @@ name: Static checks
 on:
   pull_request: {}
   push:
+    paths-ignore:
+    - '*.md'
     branches:
     - master
     tags:

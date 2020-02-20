@@ -1,6 +1,8 @@
 name: Cloud integration
 on:
   push:
+    paths-ignore:
+    - '*.md'
     branches:
     - master
     tags:
