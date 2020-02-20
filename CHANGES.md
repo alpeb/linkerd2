@@ -1,4 +1,4 @@
-## edge-20.2.2 foobar4
+## edge-20.2.2 foobar5
 
 This release includes the results from continued profiling & performance
 analysis on the Linkerd proxy. In addition to modifying internals to prevent
