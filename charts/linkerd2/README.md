@@ -1,4 +1,4 @@
-# Linkerd2 Helm Chart foobar2
+# Linkerd2 Helm Chart foobar3
 
 Linkerd is a *service mesh*, designed to give platform-wide observability,
 reliability, and security without requiring configuration or code changes.
