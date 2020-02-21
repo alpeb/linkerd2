@@ -3,7 +3,7 @@
 This release includes the results from continued profiling & performance
 analysis on the Linkerd proxy. In addition to modifying internals to prevent
 unwarranted memory growth, new metrics were introduced to aid in debugging and
-diagnostics.
+diagnostics. test.
 
 Also, Linkerd's CNI plugin is out of experimental, check out the docs at
 https://linkerd.io/2/features/cni/ !
