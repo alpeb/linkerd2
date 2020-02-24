@@ -31,28 +31,16 @@ jobs:
       run: ls -la target/release
     - name: Create release
       id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@91409e7
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
         draft: false
-    - name: Upload linkerd2-cli-darwin
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/release/linkerd2-cli-${{ env.TAG }}-darwin
-        asset_name: linkerd2-cli-${{ env.TAG }}-darwin
-        asset_content_type: application/octet-stream
-    - name: Upload linkerd2-cli-darwin-sha256
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/release/linkerd2-cli-edge-20.2.2-darwin.sha256
-        asset_name: linkerd2-cli-edge-20.2.2-darwin.sha256
-        asset_content_type: application/octet-stream
+        prelease: false
+        files: |
+          ./target/release/linkerd2-cli-${{ env.TAG }}-darwin
+          ./target/release/linkerd2-cli-${{ env.TAG }}-darwin.sha256
+          ./target/release/linkerd2-cli-${{ env.TAG }}-linux
+          ./target/release/linkerd2-cli-${{ env.TAG }}-linux.sha256
+          ./target/release/linkerd2-cli-${{ env.TAG }}-windows.exe
+          ./target/release/linkerd2-cli-${{ env.TAG }}-windows.exe.sha256
