@@ -38,9 +38,9 @@ jobs:
         draft: false
         prelease: false
         files: |
-          ./target/release/linkerd2-cli-${{ env.TAG }}-darwin
-          ./target/release/linkerd2-cli-${{ env.TAG }}-darwin.sha256
-          ./target/release/linkerd2-cli-${{ env.TAG }}-linux
-          ./target/release/linkerd2-cli-${{ env.TAG }}-linux.sha256
-          ./target/release/linkerd2-cli-${{ env.TAG }}-windows.exe
-          ./target/release/linkerd2-cli-${{ env.TAG }}-windows.exe.sha256
+          ./target/release/linkerd2-cli-${{ github.ref }}-darwin
+          ./target/release/linkerd2-cli-${{ github.ref }}-darwin.sha256
+          ./target/release/linkerd2-cli-${{ github.ref }}-linux
+          ./target/release/linkerd2-cli-${{ github.ref }}-linux.sha256
+          ./target/release/linkerd2-cli-${{ github.ref }}-windows.exe
+          ./target/release/linkerd2-cli-${{ github.ref }}-windows.exe.sha256
