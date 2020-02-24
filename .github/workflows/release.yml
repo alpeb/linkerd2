@@ -28,6 +28,8 @@ jobs:
         . bin/_tag.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
     - name: Pull CLI binaries
+      env:
+        TAG: edge-20.2.2
       run : bin/docker-pull-binaries $TAG
     - name: see
       run: ls -la
