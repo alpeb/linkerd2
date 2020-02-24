@@ -21,6 +21,12 @@ jobs:
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
       run: echo "$GITHUB_CONTEXT"
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Pull CLI binaries
+      run : bin/docker-pull-binaries
+    - name: see
+      run: ls -la
     - name: Create release
       uses: actions/create-release@v1
       env:
