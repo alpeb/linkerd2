@@ -37,3 +37,21 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: ${{ github.ref }}
         draft: false
+    - name: Upload linkerd2-cli-darwin
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/linkerd2-cli-edge-20.2.2-darwin
+        asset_name: linkerd2-cli-edge-20.2.2-darwin
+        asset_content_type: application/octet-stream
+    - name: Upload linkerd2-cli-darwin-sha256
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/linkerd2-cli-edge-20.2.2-darwin.sha256
+        asset_name: linkerd2-cli-edge-20.2.2-darwin.sha256
+        asset_content_type: application/octet-stream
