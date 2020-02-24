@@ -23,8 +23,12 @@ jobs:
       run: echo "$GITHUB_CONTEXT"
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Set environment variables from scripts
+      run: |
+        . bin/_tag.sh
+        echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
     - name: Pull CLI binaries
-      run : bin/docker-pull-binaries
+      run : bin/docker-pull-binaries $TAG
     - name: see
       run: ls -la
     - name: Create release
