@@ -34,14 +34,13 @@ jobs:
       uses: softprops/action-gh-release@91409e7
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TAG: edge-20.2.2
       with:
         draft: false
         prelease: false
         files: |
-          ./target/release/linkerd2-cli-${{ github.ref }}-darwin
-          ./target/release/linkerd2-cli-${{ github.ref }}-darwin.sha256
-          ./target/release/linkerd2-cli-${{ github.ref }}-linux
-          ./target/release/linkerd2-cli-${{ github.ref }}-linux.sha256
-          ./target/release/linkerd2-cli-${{ github.ref }}-windows.exe
-          ./target/release/linkerd2-cli-${{ github.ref }}-windows.exe.sha256
+          ./target/release/linkerd2-cli-edge-20.2.2-darwin
+          ./target/release/linkerd2-cli-edge-20.2.2-darwin.sha256
+          ./target/release/linkerd2-cli-edge-20.2.2-linux
+          ./target/release/linkerd2-cli-edge-20.2.2-linux.sha256
+          ./target/release/linkerd2-cli-edge-20.2.2-windows.exe
+          ./target/release/linkerd2-cli-edge-20.2.2-windows.exe.sha256
