@@ -36,4 +36,9 @@ jobs:
         draft: false
         prelease: false
         files: |
-          ./target/release/linkerd2-cli-*
+          ./target/release/linkerd2-cli-*-darwin
+          ./target/release/linkerd2-cli-*-darwin.sha256
+          ./target/release/linkerd2-cli-*-linux
+          ./target/release/linkerd2-cli-*-linux.sha256
+          ./target/release/linkerd2-cli-*-windows.exe
+          ./target/release/linkerd2-cli-*-windows.exe.sha256
