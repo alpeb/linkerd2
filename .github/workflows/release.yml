@@ -12,23 +12,18 @@ on:
     tags:
     - "*"
 jobs:
-  # todo: Keep in sync with `cloud_integration.yml`
-  docker_build:
-    name: Docker build
+  gh_release:
+    name: Create GH release
     runs-on: ubuntu-18.04
     steps:
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: echo "$GITHUB_CONTEXT"
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Set environment variables from scripts
+      run: |
+        . bin/_tag.sh
+        echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
     - name: Pull CLI binaries
-      env:
-        TAG: edge-20.2.2
       run : bin/docker-pull-binaries $TAG
-    - name: see
-      run: ls -la target/release
     - name: Create release
       id: create_release
       uses: softprops/action-gh-release@91409e7
@@ -38,9 +33,9 @@ jobs:
         draft: false
         prelease: false
         files: |
-          ./target/release/linkerd2-cli-edge-20.2.2-darwin
-          ./target/release/linkerd2-cli-edge-20.2.2-darwin.sha256
-          ./target/release/linkerd2-cli-edge-20.2.2-linux
-          ./target/release/linkerd2-cli-edge-20.2.2-linux.sha256
-          ./target/release/linkerd2-cli-edge-20.2.2-windows.exe
-          ./target/release/linkerd2-cli-edge-20.2.2-windows.exe.sha256
+          ./target/release/linkerd2-cli-$TAG-darwin
+          ./target/release/linkerd2-cli-$TAG-darwin.sha256
+          ./target/release/linkerd2-cli-$TAG-linux
+          ./target/release/linkerd2-cli-$TAG-linux.sha256
+          ./target/release/linkerd2-cli-$TAG-windows.exe
+          ./target/release/linkerd2-cli-$TAG-windows.exe.sha256
