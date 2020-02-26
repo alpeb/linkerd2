@@ -37,6 +37,6 @@ jobs:
           sleep 5
         done
         if [[ -z $RES ]]; then
-          echo "The version '$TAG' was NOT found published in the website"
+          echo "::error::The version '$TAG' was NOT found published in the website"
           exit 1
         fi
