@@ -12,8 +12,8 @@ on:
     tags:
     - "*"
 jobs:
-  gh_release:
-    name: Create GH release
+  website_publish_check:
+    name: Linkerd website publish check
     if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
     runs-on: ubuntu-18.04
     steps:
@@ -23,22 +23,14 @@ jobs:
       run: |
         . bin/_tag.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
-    - name: Pull CLI binaries
-      env:
-        TAG: edge-20.2.2
-      run : bin/docker-pull-binaries $TAG
-    - name: Create release
-      id: create_release
-      uses: softprops/action-gh-release@91409e7
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        draft: false
-        prelease: false
-        files: |
-          ./target/release/linkerd2-cli-*-darwin
-          ./target/release/linkerd2-cli-*-darwin.sha256
-          ./target/release/linkerd2-cli-*-linux
-          ./target/release/linkerd2-cli-*-linux.sha256
-          ./target/release/linkerd2-cli-*-windows.exe
-          ./target/release/linkerd2-cli-*-windows.exe.sha256
+    - name: Check published stable version
+      run: |
+        until RES=$(curl -sL https://run.linkerd.io/install | grep "LINKERD2_VERSION=\${LINKERD2_VERSION:-$TAG}") \
+          || (( count++ >= 10 ))
+        do
+          sleep 5
+        done
+        if [[ -z $RES ]]; then
+          echo "The version '$TAG' was NOT found published in the website"
+          exit 1
+        fi
