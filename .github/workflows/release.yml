@@ -28,8 +28,8 @@ jobs:
         . bin/_release.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
         FOOBAR=$(extract_release_notes)
-        #echo ::set-env name=NOTES::$FOOBAR
-        echo ::set-output name=NOTES::$FOOBAR
+        echo ::set-env name=NOTES::$FOOBAR
+        #echo ::set-output name=NOTES::$FOOBAR
         cat $FOOBAR
     - name: Pull CLI binaries
       env:
@@ -47,7 +47,8 @@ jobs:
       with:
         draft: false
         prelease: false
-        body_path: ${{ github.steps.vars.outputs.NOTES }}
+        body_path: ${{ github.env.NOTES }}
+        #body_path: ${{ github.steps.vars.outputs.NOTES }}
         #body_path: NOTES.md
         files: |
           ./target/release/linkerd2-cli-*-darwin
