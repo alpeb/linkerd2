@@ -26,7 +26,7 @@ jobs:
         . bin/_tag.sh
         . bin/_release.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
-        $FOOBAR=$(extract_release_notes)
+        FOOBAR=$(extract_release_notes)
         echo ::set-env name=NOTES::$FOOBAR
         cat $FOOBAR
     - name: Pull CLI binaries
