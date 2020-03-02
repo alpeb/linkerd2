@@ -3,7 +3,8 @@
 set -eu
 
 extract_release_notes() {
-  rootdir=$( cd "${0%/*}"/.. && pwd )
+  bindir=$( cd "${BASH_SOURCE[0]%/*}" && pwd )
+  rootdir=$( cd "$bindir"/.. && pwd )
 
   # Make temporary file to save the release commit message into.
   tmp=$(mktemp -t release-commit-message.XXX.txt)
