@@ -6,12 +6,12 @@ extract_release_notes() {
   bindir=$( cd "${BASH_SOURCE[0]%/*}" && pwd )
   rootdir=$( cd "$bindir"/.. && pwd )
 
-  if [[ $# > 0 ]]
+  if [ $# -eq 0 ]
   then
-    tmp="$rootdir/$1"
-  else
     # Make temporary file to save the release commit message into.
     tmp=$(mktemp -t release-commit-message.XXX.txt)
+  else
+    tmp="$rootdir/$1"
   fi
 
   # Save commit message into temporary file.
@@ -21,5 +21,5 @@ extract_release_notes() {
   # This ends up being the first section of release changes.
   awk '/^## (edge|stable)-[0-9]+\.[0-9]+\.[0-9]+/{n++} n==1' "$rootdir"/CHANGES.md > "$tmp"
 
-  echo $tmp
+  echo "$tmp"
 }
