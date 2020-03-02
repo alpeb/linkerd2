@@ -6,7 +6,7 @@ extract_release_notes() {
   bindir=$( cd "${BASH_SOURCE[0]%/*}" && pwd )
   rootdir=$( cd "$bindir"/.. && pwd )
 
-  if [[ -n "$1" ]]
+  if [[ $# > 0 ]]
   then
     tmp="$rootdir/$1"
   else
