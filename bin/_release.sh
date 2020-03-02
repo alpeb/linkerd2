@@ -6,7 +6,8 @@ extract_release_notes() {
   bindir=$( cd "${BASH_SOURCE[0]%/*}" && pwd )
   rootdir=$( cd "$bindir"/.. && pwd )
 
-  if [ -z "$1" ] then
+  if [ -z "$1" ]
+  then
     # Make temporary file to save the release commit message into.
     tmp=$(mktemp -t release-commit-message.XXX.txt)
   else
