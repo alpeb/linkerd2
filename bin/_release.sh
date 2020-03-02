@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -eu
+
+extract_release_notes() {
+  rootdir=$( cd "${0%/*}"/.. && pwd )
+
+  # Make temporary file to save the release commit message into.
+  tmp=$(mktemp -t release-commit-message.XXX.txt)
+
+  # Save commit message into temporary file.
+  #
+  # Match each occurence of the regex and increment `n` by 1. While n == 1
+  # (which is true only for the first section) print that line of `CHANGES.md`.
+  # This ends up being the first section of release changes.
+  awk '/^## (edge|stable)-[0-9]+\.[0-9]+\.[0-9]+/{n++} n==1' "$rootdir"/CHANGES.md > "$tmp"
+
+  echo $tmp
+}
