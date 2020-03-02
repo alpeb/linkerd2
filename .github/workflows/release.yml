@@ -20,25 +20,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Set environment variables from scripts
-      id: vars
       env:
         TAG: edge-20.2.3
       run: |
         . bin/_tag.sh
         . bin/_release.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
-        FOOBAR=$(extract_release_notes)
-        echo ::set-env name=NOTES::$FOOBAR
-        #echo ::set-output name=NOTES::$FOOBAR
-        cat $FOOBAR
+        extract_release_notes NOTES.md
     - name: Pull CLI binaries
       env:
         TAG: edge-20.2.3
       run : bin/docker-pull-binaries $TAG
-    - name: test notes
-      run: |
-        echo $NOTES
-        cat $NOTES
     - name: Create release
       id: create_release
       uses: softprops/action-gh-release@91409e7
@@ -47,9 +39,7 @@ jobs:
       with:
         draft: false
         prelease: false
-        body_path: ${{ github.env.NOTES }}
-        #body_path: ${{ github.steps.vars.outputs.NOTES }}
-        #body_path: NOTES.md
+        body_path: NOTES.md
         files: |
           ./target/release/linkerd2-cli-*-darwin
           ./target/release/linkerd2-cli-*-darwin.sha256
