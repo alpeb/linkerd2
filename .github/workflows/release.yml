@@ -47,8 +47,8 @@ jobs:
       with:
         draft: false
         prelease: false
-        #body_path: ${{ github.steps.vars.outputs.NOTES }}
-        body_path: NOTES.md
+        body_path: ${{ github.steps.vars.outputs.NOTES }}
+        #body_path: NOTES.md
         files: |
           ./target/release/linkerd2-cli-*-darwin
           ./target/release/linkerd2-cli-*-darwin.sha256
