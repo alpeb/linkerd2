@@ -34,6 +34,7 @@ jobs:
     - name: test notes
       run: |
         echo $NOTES
+        cat $NOTES
     - name: Create release
       id: create_release
       uses: softprops/action-gh-release@91409e7
