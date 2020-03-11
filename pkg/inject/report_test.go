@@ -10,6 +10,7 @@ import (
 )
 
 func TestInjectable(t *testing.T) {
+	t.Fail("Failing TestInjectable on purpose")
 	var testCases = []struct {
 		podSpec             *corev1.PodSpec
 		podMeta             *metav1.ObjectMeta
