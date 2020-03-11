@@ -10,7 +10,7 @@ import (
 )
 
 func TestInjectable(t *testing.T) {
-	t.Fail("::log-command uno={un},dos={deux}::{somevalue}")
+	t.Error("::log-command uno={un},dos={deux}::{somevalue}")
 	var testCases = []struct {
 		podSpec             *corev1.PodSpec
 		podMeta             *metav1.ObjectMeta
