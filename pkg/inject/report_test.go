@@ -10,7 +10,7 @@ import (
 )
 
 func TestInjectable(t *testing.T) {
-	fmt.Println("::log-command uno={un},dos={deux}::{somevalue}")
+	fmt.Println(`echo "::log-command uno={un},dos={deux}::{somevalue}"`)
 	var testCases = []struct {
 		podSpec             *corev1.PodSpec
 		podMeta             *metav1.ObjectMeta
