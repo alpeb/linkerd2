@@ -127,6 +127,7 @@ var (
 // Later tests depend on the success of earlier tests
 
 func TestVersionPreInstall(t *testing.T) {
+	t.Fatal("Testing failure")
 	version := "unavailable"
 	if TestHelper.UpgradeFromVersion() != "" {
 		version = TestHelper.UpgradeFromVersion()
