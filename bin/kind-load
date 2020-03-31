@@ -76,7 +76,8 @@ for img in proxy controller web grafana cli-bin debug cni-plugin ; do
     cmd=(docker-image "$DOCKER_REGISTRY/$img:$TAG")
   fi
 
-  "$bindir"/kind --name "$cluster" load "${cmd[@]}" || touch load_fail &
+#  "$bindir"/kind --name "$cluster" load "${cmd[@]}" || touch load_fail &
+  "$bindir"/kind --name "$cluster" load "${cmd[@]}"
 done
 
 wait < <(jobs -p)
