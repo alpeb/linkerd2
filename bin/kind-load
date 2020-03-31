@@ -65,20 +65,27 @@ bindir=$( cd "${0%/*}" && pwd )
 
 TAG=${TAG:-$(head_root_tag)}
 
-rm -f load_fail
-for img in proxy controller web grafana cli-bin debug cni-plugin ; do
-  if [ $images ]; then
-    if [ "$images_host" ]; then
-      DOCKER_HOST=$images_host docker save "$DOCKER_REGISTRY/$img:$TAG" > $img.tar
-    fi
-    cmd=(image-archive "image-archives/$img.tar")
-  else
-    cmd=(docker-image "$DOCKER_REGISTRY/$img:$TAG")
-  fi
+bin/kind --name kind load image-archive image-archives/proxy.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/controller.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/web.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/grafana.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/cli-bin.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/debug.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/cni-plugin.tar || touch load_fail &
+
+#rm -f load_fail
+#for img in proxy controller web grafana cli-bin debug cni-plugin ; do
+#  if [ $images ]; then
+#    if [ "$images_host" ]; then
+#      DOCKER_HOST=$images_host docker save "$DOCKER_REGISTRY/$img:$TAG" > $img.tar
+#    fi
+#    cmd=(image-archive "image-archives/$img.tar")
+#  else
+#    cmd=(docker-image "$DOCKER_REGISTRY/$img:$TAG")
+#  fi
 
   #"$bindir"/kind --name "$cluster" load "${cmd[@]}" || touch load_fail &
-  "$bindir"/kind --name "$cluster" load image-archive image-archives/$img.tar || touch load_fail &
-done
+#done
 
 wait < <(jobs -p)
 if [ -f load_fail ]; then
