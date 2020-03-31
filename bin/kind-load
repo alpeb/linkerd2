@@ -71,7 +71,7 @@ for img in proxy controller web grafana cli-bin debug cni-plugin ; do
     if [ "$images_host" ]; then
       DOCKER_HOST=$images_host docker save "$DOCKER_REGISTRY/$img:$TAG" > $img.tar
     fi
-    cmd=(image-archive "image-archives/$img.tar")
+    cmd=(image-archive image-archives/$img.tar)
   else
     cmd=(docker-image "$DOCKER_REGISTRY/$img:$TAG")
   fi
