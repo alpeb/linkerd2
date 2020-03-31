@@ -65,8 +65,8 @@ bindir=$( cd "${0%/*}" && pwd )
 
 TAG=${TAG:-$(head_root_tag)}
 
-bin/kind --name kind load image-archive image-archives/proxy.tar || touch load_fail &
-bin/kind --name kind load image-archive image-archives/controller.tar || touch load_fail &
+bin/kind --name kind load image-archive image-archives/proxy.tar || tee load_fail &
+bin/kind --name kind load image-archive image-archives/controller.tar || tee load_fail &
 #bin/kind --name kind load image-archive image-archives/web.tar || touch load_fail &
 #bin/kind --name kind load image-archive image-archives/grafana.tar || touch load_fail &
 #bin/kind --name kind load image-archive image-archives/cli-bin.tar || touch load_fail &
