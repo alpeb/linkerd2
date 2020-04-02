@@ -410,10 +410,8 @@ jobs:
     needs: [docker_deploy]
     steps:
     - name: Checkout code
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       uses: actions/checkout@v2
     - name: Configure gcloud
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       env:
         CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
         CLOUD_SDK_SERVICE_ACCOUNT_KEY: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
@@ -437,7 +435,6 @@ jobs:
         gcloud auth configure-docker
         bin/kubectl version --short
     - name: Install linkerd CLI
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       run: |
         TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
         image="gcr.io/linkerd-io/cli-bin:$TAG"
@@ -448,7 +445,6 @@ jobs:
         [[ "$TAG" == "$($HOME/.linkerd version --short --client)" ]]
         echo "Installed Linkerd CLI version: $TAG"
     - name: Run integration tests
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       env:
         GITCOOKIE_SH: ${{ secrets.GITCOOKIE_SH }}
       run: |
@@ -457,7 +453,6 @@ jobs:
         version="$($HOME/.linkerd version --client --short | tr -cd '[:alnum:]-')"
         bin/test-run $HOME/.linkerd linkerd-$version
     - name: CNI tests
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       run: |
         export TAG="$($HOME/.linkerd version --client --short)"
         go test -cover -race -v -mod=readonly ./cni-plugin/test -integration-tests
@@ -469,10 +464,8 @@ jobs:
     needs: [cloud_integration]
     steps:
     - name: Checkout code
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       uses: actions/checkout@v2
     - name: Configure gcloud
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       env:
         CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
         CLOUD_SDK_SERVICE_ACCOUNT_KEY: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
@@ -495,7 +488,6 @@ jobs:
         gcloud auth configure-docker
         bin/kubectl version --short
     - name: Cleanup
-      if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags')
       run: |
         export PATH="`pwd`/bin:$PATH"
         bin/test-cleanup
