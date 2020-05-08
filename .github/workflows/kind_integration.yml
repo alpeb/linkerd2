@@ -160,12 +160,14 @@ jobs:
         init_test_run $HOME/.linkerd
         ${{ matrix.integration_test }}_integration_tests
     - name: Export logs
+      if: failure()
       run: |
         mkdir -p logs
         kind export logs logs/logs-${{ matrix.integration_test }}
         pwd
         ls -l
     - name: Upload logs
+      if: failure()
       # actions/upload-artifact@v1
       uses: actions/upload-artifact@3446296
       with:
