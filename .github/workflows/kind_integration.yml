@@ -161,7 +161,8 @@ jobs:
         ${{ matrix.integration_test }}_integration_tests
     - name: Export logs
       run: |
-        kind export logs logs
+        mkdir -p logs
+        kind export logs logs/logs-${{ matrix.integration_test }}
         pwd
         ls -l
     - name: Upload logs
