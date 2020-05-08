@@ -2,9 +2,6 @@ name: KinD integration
 on:
   pull_request: {}
   push:
-    paths-ignore:
-    - '*.md'
-    - '**/*.md'
     branches:
     - master
 jobs:
@@ -162,3 +159,14 @@ jobs:
 
         init_test_run $HOME/.linkerd
         ${{ matrix.integration_test }}_integration_tests
+    - name: Export logs
+      run: |
+        kind export logs logs
+        pwd
+        ls -l
+    - name: Upload logs
+      # actions/upload-artifact@v1
+      uses: actions/upload-artifact@3446296
+      with:
+        name: logs
+        path: logs
