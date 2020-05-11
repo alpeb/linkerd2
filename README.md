@@ -1,6 +1,5 @@
 ![Linkerd][logo]
 
-
 [![GitHub Actions Status][github-actions-badge]][github-actions]
 [![GitHub license][license-badge]](LICENSE)
 [![Go Report Card][go-report-card-badge]][go-report-card]
