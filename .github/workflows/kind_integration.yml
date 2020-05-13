@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - master
+	env:
+    LINKERD_VERSION: 2.6.1
 jobs:
   docker_build:
     name: Docker build
@@ -12,12 +14,15 @@ jobs:
     - name: Checkout code
       # actions/checkout@v2
       uses: actions/checkout@722adc6
-    - name: lint
-      # devblackops/github-action-psscriptanalyzer@v2.0.0
-      uses: devblackops/github-action-psscriptanalyzer@889a059
-      env:
-        # https://github.com/devblackops/github-action-psscriptanalyzer/pull/3/files
-        INPUT_FAILONWARNING: 1
+    - name: update version in nuspec file
+      run: |
+        sed -i s/$\{LINKERD_VERSION\}/${{ env.LINKERD_VERSION }}/g bin/win/linkerd.nuspec
+    - name: choco pack
+      uses: crazy-max/ghaction-chocolatey@v1
       with:
-        rootPath: bin/win/tools
-        failOnInfos: true
+        args: pack bin/win/linkerd.nuspec
+    - name: upload nupkg file
+      uses: actions/upload-artifact@v1
+      with:
+        name: linkerd-stable-${{ env.LINKERD_VERSION }}.nupkg
+        path: linkerd.${{ env.LINKERD_VERSION }}.nupkg
