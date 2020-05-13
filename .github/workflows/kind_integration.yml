@@ -17,7 +17,7 @@ jobs:
       uses: devblackops/github-action-psscriptanalyzer@889a059
       env:
         # https://github.com/devblackops/github-action-psscriptanalyzer/pull/3/files
-        FAILONWARNING: true
+        INPUT_FAILONWARNING: 1
       with:
         rootPath: bin/win/tools
         failOnInfos: true
