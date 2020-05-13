@@ -11,7 +11,7 @@ elseif (Test-Path env:linkerdPath) {
 	$lpath = $env:linkerdPath
 }
 else {
-  foobar
+  Write-Host foobar
 	$lpath = $toolsPath
 }
 
