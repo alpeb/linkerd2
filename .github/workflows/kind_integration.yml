@@ -13,7 +13,8 @@ jobs:
       # actions/checkout@v2
       uses: actions/checkout@722adc6
     - name: lint
-      uses: devblackops/github-action-psscriptanalyzer@master
+      # devblackops/github-action-psscriptanalyzer@v2.0.0
+      uses: devblackops/github-action-psscriptanalyzer@889a059
       with:
-        rootPath: bin/win/tools
+        rootPath: bin/win/toolsfoo
         failOnInfos: true
