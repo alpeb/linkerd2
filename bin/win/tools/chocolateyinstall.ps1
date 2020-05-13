@@ -11,6 +11,7 @@ elseif (Test-Path env:linkerdPath) {
 	$lpath = $env:linkerdPath
 }
 else {
+  foobar
 	$lpath = $toolsPath
 }
 
