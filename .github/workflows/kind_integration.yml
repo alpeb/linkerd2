@@ -4,8 +4,8 @@ on:
   push:
     branches:
     - master
-  env:
-    LINKERD_VERSION: 2.6.1
+env:
+  LINKERD_VERSION: 2.6.1
 jobs:
   docker_build:
     name: Docker build
