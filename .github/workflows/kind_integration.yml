@@ -16,5 +16,5 @@ jobs:
       # devblackops/github-action-psscriptanalyzer@v2.0.0
       uses: devblackops/github-action-psscriptanalyzer@889a059
       with:
-        rootPath: bin/win/toolsfoo
+        rootPath: bin/win/tools
         failOnInfos: true
