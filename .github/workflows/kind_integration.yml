@@ -18,7 +18,6 @@ jobs:
       run: |
         #echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
         echo ::set-env name=LINKERD_VERSION::foobar
-      run: |
     - name: update version in nuspec file
       run: |
         echo $LINKERD_VERSION
