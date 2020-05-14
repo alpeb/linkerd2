@@ -29,5 +29,5 @@ $packageArgs = @{
   checksumType   = 'sha256'
 }
 
-Get-ChocolateyWebFile @packageArgs
+Get-ChocolateyWebFile -Verbose -Debug @packageArgs
 Install-ChocolateyPath -Verbose -Debug $packageArgs.fileFullPath 'User'
