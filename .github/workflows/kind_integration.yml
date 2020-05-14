@@ -10,14 +10,15 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       TAG: stable-2.7.1
-      LINKERD_VERSION: foobar
     steps:
     - name: Checkout code
       # actions/checkout@v2
       uses: actions/checkout@722adc6
+    - name: set env
+        echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
+      run: |
     - name: update version in nuspec file
       run: |
-        echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
         echo $LINKERD_VERSION
         sed -i s/$\{LINKERD_VERSION\}/${{ env.LINKERD_VERSION }}/g bin/win/linkerd.nuspec
     - name: choco pack
