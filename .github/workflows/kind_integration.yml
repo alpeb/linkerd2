@@ -17,11 +17,10 @@ jobs:
     - name: set env
       run: |
         echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
-        #echo ::set-env name=LINKERD_VERSION::foobar
     - name: update version in nuspec file
       run: |
-        echo $LINKERD_VERSION
-        sed -i s/$\{LINKERD_VERSION\}/${{ env.LINKERD_VERSION }}/g bin/win/linkerd.nuspec
+        sed -i s/$\{LINKERD_VERSION\}/$LINKERD_VERSION/g bin/win/linkerd.nuspec
+        cat bin/win/linkerd.nuspec
     - name: choco pack
       # crazy-max/ghaction-chocolatey@v1.2.2
       uses: crazy-max/ghaction-chocolatey@55c9188
@@ -37,4 +36,4 @@ jobs:
         draft: false
         prelease: false
         files: |
-          linkerd.${{ env.LINKERD_VERSION }}.nupkg
+          linkerd.$LINKERD_VERSION.nupkg
