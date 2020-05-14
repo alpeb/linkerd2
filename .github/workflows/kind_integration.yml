@@ -38,4 +38,4 @@ jobs:
         draft: false
         prelease: false
         files: |
-          linkerd.$LINKERD_VERSION.nupkg
+          linkerd.*.nupkg
