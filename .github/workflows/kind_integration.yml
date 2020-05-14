@@ -15,6 +15,7 @@ jobs:
       # actions/checkout@v2
       uses: actions/checkout@722adc6
     - name: set env
+      run: |
         #echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
         echo ::set-env name=LINKERD_VERSION::foobar
       run: |
