@@ -4,26 +4,33 @@ on:
   push:
     branches:
     - master
-env:
-  LINKERD_VERSION: 2.7.1
 jobs:
   docker_build:
     name: Docker build
     runs-on: ubuntu-18.04
+    env:
+      TAG: stable-2.7.1
     steps:
     - name: Checkout code
       # actions/checkout@v2
       uses: actions/checkout@722adc6
     - name: update version in nuspec file
       run: |
+        echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
         sed -i s/$\{LINKERD_VERSION\}/${{ env.LINKERD_VERSION }}/g bin/win/linkerd.nuspec
     - name: choco pack
       # crazy-max/ghaction-chocolatey@v1.2.2
       uses: crazy-max/ghaction-chocolatey@55c9188
       with:
         args: pack bin/win/linkerd.nuspec
-    - name: upload nupkg file
-      uses: actions/upload-artifact@v1
+    - name: Create release
+      id: create_release
+      # softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@91409e7
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: linkerd-stable-${{ env.LINKERD_VERSION }}.nupkg
-        path: linkerd.${{ env.LINKERD_VERSION }}.nupkg
+        draft: false
+        prelease: false
+        files: |
+          linkerd.${{ env.LINKERD_VERSION }}.nupkg
