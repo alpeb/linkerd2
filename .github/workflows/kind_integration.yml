@@ -13,7 +13,7 @@ jobs:
     env:
       TAG: stable-2.7.1
     steps:
-    - name: Checkout code
+    - name: Checkout code again
       # actions/checkout@v2
       uses: actions/checkout@722adc6
     - name: set env
