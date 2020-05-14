@@ -14,9 +14,12 @@ jobs:
     - name: Checkout code
       # actions/checkout@v2
       uses: actions/checkout@722adc6
-    - name: update version in nuspec file
+    - name: set env
       run: |
         echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
+        #echo ::set-env name=LINKERD_VERSION::foobar
+    - name: update version in nuspec file
+      run: |
         echo $LINKERD_VERSION
         sed -i s/$\{LINKERD_VERSION\}/${{ env.LINKERD_VERSION }}/g bin/win/linkerd.nuspec
     - name: choco pack
