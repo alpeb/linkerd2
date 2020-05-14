@@ -5,7 +5,7 @@ on:
     branches:
     - master
 env:
-  LINKERD_VERSION: 2.6.1
+  LINKERD_VERSION: 2.7.1
 jobs:
   docker_build:
     name: Docker build
@@ -18,7 +18,8 @@ jobs:
       run: |
         sed -i s/$\{LINKERD_VERSION\}/${{ env.LINKERD_VERSION }}/g bin/win/linkerd.nuspec
     - name: choco pack
-      uses: crazy-max/ghaction-chocolatey@v1
+      # crazy-max/ghaction-chocolatey@v1.2.2
+      uses: crazy-max/ghaction-chocolatey@55c9188
       with:
         args: pack bin/win/linkerd.nuspec
     - name: upload nupkg file

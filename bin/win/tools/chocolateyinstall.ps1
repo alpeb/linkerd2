@@ -30,4 +30,4 @@ $packageArgs = @{
 }
 
 Get-ChocolateyWebFile @packageArgs
-Install-ChocolateyPath $packageArgs.fileFullPath 'User'
+Install-ChocolateyPath -Verbose $packageArgs.fileFullPath 'User'
