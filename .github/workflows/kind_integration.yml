@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       TAG: stable-2.7.1
-      LINKERD_VERSION:
+      LINKERD_VERSION: foobar
     steps:
     - name: Checkout code
       # actions/checkout@v2
