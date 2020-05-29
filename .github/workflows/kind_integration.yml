@@ -138,7 +138,7 @@ jobs:
         PROMETHEUS_IMAGE_NAME: prom/prometheus:v2.15.2
       run: |
         # Fetch images from the Packet host and load them into the local KinD cluster
-        bin/kind-load --images --images-host ssh://linkerd-docker
+        #bin/kind-load --images --images-host ssh://linkerd-docker
 
         # Load proxy-init and prometheus images into KinD while it is
         # available. Allow these commands to fail since they will be cached
