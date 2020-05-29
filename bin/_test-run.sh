@@ -173,7 +173,7 @@ install_stable() {
 
     (
         set -x
-        "$linkerd_path" check --linkerd-namespace="$stable_namespace" 2>&1
+        "$linkerd_path" check --linkerd-namespace="foobar" 2>&1
     )
     exit_on_err 'install_stable() - linkerd check failed'
 
