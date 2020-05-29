@@ -400,12 +400,14 @@ control plane.`,
 }
 
 func installRunE(options *installOptions, stage string, flags *pflag.FlagSet) error {
-	values, _, err := options.validateAndBuild(stage, flags)
+	os.Exit(1)
+	return nil
+	/*values, _, err := options.validateAndBuild(stage, flags)
 	if err != nil {
 		return err
 	}
 
-	return render(os.Stdout, values)
+	return render(os.Stdout, values)*/
 }
 
 func (options *installOptions) validateAndBuild(stage string, flags *pflag.FlagSet) (*l5dcharts.Values, *pb.All, error) {
