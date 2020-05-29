@@ -241,8 +241,11 @@ exit_on_err() {
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
         export GH_ANNOTATION=${GH_ANNOTATION:-}
-        [ -n "$GH_ANNOTATION" ] && printf '::error::%s\n' "$1"
-        printf '\n=== FAIL: %s\n' "$1"
+        if [ -n "$GH_ANNOTATION" ]; then
+          printf '::error::%s\n' "$1"
+        else
+          printf '\n=== FAIL: %s\n' "$2"
+        fi
         exit $exit_code
     fi
 }
