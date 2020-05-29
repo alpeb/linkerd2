@@ -31,6 +31,10 @@ func TestMain(m *testing.M) {
 /// TEST EXECUTION ///
 //////////////////////
 
+func TestFoobar(t *testing.T) {
+	testutil.Fatal(t, "Foobar error")
+}
+
 func TestInjectManual(t *testing.T) {
 	cmd := []string{"inject",
 		"--manual",
