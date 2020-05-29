@@ -400,6 +400,7 @@ control plane.`,
 }
 
 func installRunE(options *installOptions, stage string, flags *pflag.FlagSet) error {
+	fmt.Fprint(os.Stderr, "testing error")
 	os.Exit(1)
 	return nil
 	/*values, _, err := options.validateAndBuild(stage, flags)
