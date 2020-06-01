@@ -24,7 +24,7 @@ jobs:
       run : bin/docker-pull-binaries stable-2.7.1
     - name: Chocolatey - set version
       run: |
-        echo ::set-env name=2.7.1::2.7.1
+        echo ::set-env name=LINKERD_VERSION::2.7.1
     - name: Chocolatey - update nuspec
       run: |
         sed -i s/$\{LINKERD_VERSION\}/$LINKERD_VERSION/g bin/win/linkerd.nuspec
