@@ -1,0 +1,51 @@
+name: Release
+on:
+  push:
+    branches:
+    - master
+env:
+  GH_ANNOTATION: true
+jobs:
+  # todo: Keep in sync with `cloud_integration.yml`
+  gh_release:
+    name: Create GH release
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout code
+      # actions/checkout@v2
+      uses: actions/checkout@722adc6
+    - name: Set environment variables from scripts
+      run: |
+        . bin/_tag.sh
+        . bin/_release.sh
+        echo ::set-env name=TAG::stable-2.7.1
+        extract_release_notes NOTES.md
+    - name: Pull CLI binaries
+      run : bin/docker-pull-binaries stable-2.7.1
+    - name: Chocolatey - set version
+      run: |
+        echo ::set-env name=2.7.1
+    - name: Chocolatey - update nuspec
+      run: |
+        sed -i s/$\{LINKERD_VERSION\}/$LINKERD_VERSION/g bin/win/linkerd.nuspec
+        cd bin/win
+    - name: Chocolatey - pack
+      # crazy-max/ghaction-chocolatey@v1.2.2
+      uses: crazy-max/ghaction-chocolatey@55c9188
+      with:
+        args: pack bin/win/linkerd.nuspec
+    - name: Chocolatey - reset dir
+      run: |
+        cd ../..
+    - name: Create release
+      id: create_release
+      # softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@91409e7
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        draft: false
+        prerelease: false
+        body_path: NOTES.md
+        files: |
+          ./linkerd.*.nupkg
