@@ -14,12 +14,6 @@ jobs:
     - name: Checkout code
       # actions/checkout@v2
       uses: actions/checkout@722adc6
-    - name: Set environment variables from scripts
-      run: |
-        . bin/_tag.sh
-        . bin/_release.sh
-        echo ::set-env name=TAG::stable-2.7.1
-        extract_release_notes NOTES.md
     - name: Pull CLI binaries
       run : bin/docker-pull-binaries stable-2.7.1
     - name: Chocolatey - set version
@@ -37,15 +31,11 @@ jobs:
     - name: Chocolatey - reset dir
       run: |
         cd ../..
-    - name: Create release
-      id: create_release
-      # softprops/action-gh-release@v1
-      uses: softprops/action-gh-release@91409e7
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        pwd
+        ls -l
+    - name: Upload artifact
+      # actions/upload-artifact@v1
+      uses: actions/upload-artifact@3446296
       with:
-        draft: false
-        prerelease: false
-        body_path: NOTES.md
-        files: |
-          ./linkerd.*.nupkg
+        name: choco 
+        path: ./linkerd.2.7.1.nupkg
