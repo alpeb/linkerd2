@@ -23,6 +23,7 @@ jobs:
         echo "version: $LINKERD_VERSION"
   gh_release:
     name: Create GH release
+    needs: [foo]
     runs-on: windows-2019
     steps:
     - name: Checkout code
