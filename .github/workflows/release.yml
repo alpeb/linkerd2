@@ -9,7 +9,7 @@ jobs:
   # todo: Keep in sync with `cloud_integration.yml`
   gh_release:
     name: Create GH release
-    runs-on: ubuntu-18.04
+    runs-on: windows-2019
     steps:
     - name: Checkout code
       # actions/checkout@v2
