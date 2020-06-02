@@ -52,13 +52,16 @@ jobs:
         . bin/_release.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
         extract_release_notes NOTES.md
-    - name: Pull CLI binaries
-      run : bin/docker-pull-binaries $TAG
     - name: Download choco package
       # actions/download-artifact@v1
       uses: actions/download-artifact@18f0f59
       with:
         name: choco
+    - name: Pull CLI binaries
+      run : |
+        bin/docker-pull-binaries $TAG
+        VERSION=${TAG#"stable-"}
+        mv choco/linkerd.*.*nupkg target/release/linkerd2-cli-$VERSION.nupkg || true
     - name: Create release
       id: create_release
       # softprops/action-gh-release@v1
