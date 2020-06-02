@@ -18,6 +18,8 @@ jobs:
         TAG=stable-2.7.1
         echo "TAG: $TAG"
         echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
+    - name: showversion
+      run: |
         echo "version: $LINKERD_VERSION"
   gh_release:
     name: Create GH release
