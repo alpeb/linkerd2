@@ -79,4 +79,4 @@ jobs:
           ./target/release/linkerd2-cli-*-linux.sha256
           ./target/release/linkerd2-cli-*-windows.exe
           ./target/release/linkerd2-cli-*-windows.exe.sha256
-          ./choco/linkerd.*.nupkg
+          ./target/release/linkerd2-cli-*.nupkg
