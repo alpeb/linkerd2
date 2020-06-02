@@ -1,29 +1,16 @@
 name: Release
 on:
   push:
+    tags:
+    - "*"
     branches:
     - master
 env:
   GH_ANNOTATION: true
   LINKERD_VERSION:
 jobs:
-  foo:
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Checkout code
-      # actions/checkout@v2
-      uses: actions/checkout@722adc6
-    - name: calculate version
-      run: |
-        TAG=stable-2.7.1
-        echo "TAG: $TAG"
-        echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
-    - name: showversion
-      run: |
-        echo "version: $LINKERD_VERSION"
   gh_release:
     name: Create GH release
-    needs: [foo]
     runs-on: windows-2019
     steps:
     - name: Checkout code
