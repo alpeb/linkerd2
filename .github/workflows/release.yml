@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@722adc6
     - name: calculate version
       run: |
-        TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)
+        TAG=stable-2.7.1
         echo "TAG: $TAG"
         echo ::set-env name=LINKERD_VERSION::${TAG#"stable-"}
         echo "version: $LINKERD_VERSION"
