@@ -61,7 +61,7 @@ jobs:
       run : |
         bin/docker-pull-binaries $TAG
         VERSION=${TAG#"stable-"}
-        mv choco/linkerd.*.nupkg target/release/linkerd2-cli-$VERSION.nupkg
+        mv choco/linkerd.*.nupkg target/release/linkerd2-cli-stable-$VERSION.nupkg || true
     - name: Create release
       id: create_release
       # softprops/action-gh-release@v1
