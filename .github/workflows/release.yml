@@ -22,11 +22,12 @@ jobs:
     - name: Chocolatey - update nuspec
       run: |
         sed -i s/$\{LINKERD_VERSION\}/$LINKERD_VERSION/g bin/win/linkerd.nuspec
+        cd bin/win
     - name: Chocolatey - pack
       # crazy-max/ghaction-chocolatey@v1.2.2
       uses: crazy-max/ghaction-chocolatey@55c9188
       with:
-        args: pack bin/win/linkerd.nuspec
+        args: pack
     - name: Chocolatey - reset dir
       run: |
         pwd
