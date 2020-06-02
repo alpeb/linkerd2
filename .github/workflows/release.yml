@@ -7,7 +7,6 @@ on:
     - master
 env:
   GH_ANNOTATION: true
-  LINKERD_VERSION:
 jobs:
   gh_release:
     name: Create GH release
@@ -18,7 +17,6 @@ jobs:
       uses: actions/checkout@722adc6
     - name: Chocolatey - update nuspec
       run: |
-        gci env:* | sort-object name
         $LINKERD_VERSION=$env:GITHUB_REF.Substring(17)
         (Get-Content bin\win\linkerd.nuspec).replace('LINKERD_VERSION', $LINKERD_VERSION) | Set-Content bin\win\linkerd.nuspec
     - name: Chocolatey - pack
@@ -26,9 +24,9 @@ jobs:
       uses: crazy-max/ghaction-chocolatey@55c9188
       with:
         args: pack bin/win/linkerd.nuspec
-    - name: Upload artifact
-      # actions/upload-artifact@v1
-      uses: actions/upload-artifact@3446296
+    - name: Chocolatey - upload package
+      # actions/upload-artifact@v2.01
+      uses: actions/upload-artifact@97b7dac
       with:
         name: choco 
-        path: ./linkerd.2.7.1.nupkg
+        path: ./linkerd.*.nupkg
