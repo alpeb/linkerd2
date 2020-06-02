@@ -21,7 +21,7 @@ jobs:
         echo ::set-env name=LINKERD_VERSION::2.7.1
     - name: Chocolatey - update nuspec
       run: |
-        (Get-Content bin\win\linkerd.nuspec).replace "LINKERD_VERSION",$env:LINKERD_VERSION  Set-Content bin\win\linkerd.nuspec
+        (Get-Content bin\win\linkerd.nuspec).replace('LINKERD_VERSION', $env:LINKERD_VERSION) | Set-Content bin\win\linkerd.nuspec
         type bin\win\linkerd.nuspec
     - name: Chocolatey - pack
       # crazy-max/ghaction-chocolatey@v1.2.2
