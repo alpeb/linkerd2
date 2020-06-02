@@ -20,8 +20,8 @@ jobs:
       run: |
         echo "::set-env name=LINKERD_VERSION::2.7.1"
     - name: Chocolatey - update nuspec
-      env:
-        LINKERD_VERSION: ${{ env.LINKERD_VERSION }}
+#      env:
+#        LINKERD_VERSION: ${{ env.LINKERD_VERSION }}
       run: |
         gci env:* | sort-object name
         (Get-Content bin\win\linkerd.nuspec).replace('LINKERD_VERSION', $env:LINKERD_VERSION) | Set-Content bin\win\linkerd.nuspec
