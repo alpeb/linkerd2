@@ -6,13 +6,16 @@ on:
     - '*.md'
     - '**/*.md'
     branches:
-    - main
+    - master
 env:
   GH_ANNOTATION: true
 jobs:
   docker_build:
-    name: Docker build
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        target: [proxy, controller, web, cni-plugin, debug, cli-bin, grafana]
+    name: Docker build (${{ matrix.target }})
     steps:
     - name: Checkout code
       # actions/checkout@v2
@@ -34,8 +37,30 @@ jobs:
         echo "${{ secrets.DOCKER_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
         ssh linkerd-docker docker version
         echo ::set-env name=DOCKER_HOST::ssh://linkerd-docker
+    - name: Setup docker buildx config (Forked repositories)
+      # `docker buildx` doesn't work well with concurrent builds using a remote server
+      # so this step (and Setup docker buildx and Cache docker layers) are only used
+      # when not relying on the Packet host
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+      run: |
+        echo ::set-env name=DOCKER_BUILDKIT::1
+        echo ::set-env name=DOCKER_BUILDKIT_CACHE::${{ runner.temp }}/.buildx-cache
+    - name: Setup docker buildx (Forked repositories)
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+      # crazy-max/ghaction-docker-buildx@v3.2.0
+      uses: crazy-max/ghaction-docker-buildx@552c9de
+    - name: Cache docker layers (Forked repositories)
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+      # actions/cache@v2.0.0
+      uses: actions/cache@b820478
+      with:
+        path: ${{ env.DOCKER_BUILDKIT_CACHE }}
+        key: ${{ runner.os }}-buildx-${{ matrix.target }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-${{ matrix.target }}-
     - name: Build docker images
       env:
+        TRACE: 1
         DOCKER_TRACE: 1
       run: |
         export PATH="`pwd`/bin:$PATH"
@@ -45,21 +70,13 @@ jobs:
         ARCHIVES: /home/runner/archives
       run: |
         mkdir -p $ARCHIVES
-
-        for image in proxy controller web cni-plugin debug cli-bin grafana; do
-          docker save "$DOCKER_REGISTRY/$image:$TAG" > $ARCHIVES/$image.tar || tee save_fail &
-        done
-
+        docker save "$DOCKER_REGISTRY/${{ matrix.target }}:$TAG" > $ARCHIVES/${{ matrix.target }}.tar
         # save windows cli into artifacts
-        cp -r ./target/cli/windows/linkerd $ARCHIVES/linkerd-windows.exe
-
-        # Wait for `docker save` background processes to complete. Exit early
-        # if any job failed.
-        wait < <(jobs -p)
-        test -f save_fail && exit 1 || true
+        if [ '${{ matrix.target }}' == 'cli-bin' ]; then
+          cp -r ./target/cli/windows/linkerd $ARCHIVES/linkerd-windows.exe
+        fi
     # `with.path` values do not support environment variables yet, so an
     # absolute path is used here.
-    #
     # https://github.com/actions/upload-artifact/issues/8
     - name: Upload artifact
       # actions/upload-artifact@v1
