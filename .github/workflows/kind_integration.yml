@@ -9,8 +9,7 @@ on:
     - master
 env:
   GH_ANNOTATION: true
-  DOCKER_BUILDKIT:1
-  DOCKER_BUILDKIT_CACHE: ${{ runner.temp }}/.buildx-cache
+  DOCKER_BUILDKIT: 1
 jobs:
   docker_build:
     runs-on: ubuntu-18.04
@@ -26,9 +25,9 @@ jobs:
       run: |
         . bin/_tag.sh
         echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
-
         . bin/_docker.sh
         echo ::set-env name=DOCKER_REGISTRY::$DOCKER_REGISTRY
+        echo ::set-env name=DOCKER_BUILDKIT_CACHE::${{ runner.temp }}/.buildx-cache
     - name: Setup docker buildx
       # crazy-max/ghaction-docker-buildx@v3.2.0
       uses: crazy-max/ghaction-docker-buildx@552c9de
