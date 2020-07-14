@@ -36,9 +36,9 @@ jobs:
       uses: actions/cache@b820478
       with:
         path: ${{ env.DOCKER_BUILDKIT_CACHE }}
-        key: ${{ runner.os }}-buildx4-${{ matrix.target }}-${{ env.TAG }}
+        key: ${{ runner.os }}-buildx6-${{ matrix.target }}-${{ env.TAG }}
         restore-keys: |
-          ${{ runner.os }}-buildx5-${{ matrix.target }}-
+          ${{ runner.os }}-buildx6-${{ matrix.target }}-
     - name: Build docker images
       env:
         TRACE: 1
