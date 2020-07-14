@@ -9,6 +9,8 @@ on:
     - master
 env:
   GH_ANNOTATION: true
+  DOCKER_BUILDKIT:1
+  DOCKER_BUILDKIT_CACHE: ${{ runner.temp }}/.buildx-cache
 jobs:
   docker_build:
     runs-on: ubuntu-18.04
@@ -27,37 +29,17 @@ jobs:
 
         . bin/_docker.sh
         echo ::set-env name=DOCKER_REGISTRY::$DOCKER_REGISTRY
-    - name: Setup SSH config for Packet
-      if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      run: |
-        mkdir -p ~/.ssh/
-        touch ~/.ssh/id && chmod 600 ~/.ssh/id
-        echo "${{ secrets.DOCKER_SSH_CONFIG }}"  > ~/.ssh/config
-        echo "${{ secrets.DOCKER_PRIVATE_KEY }}" > ~/.ssh/id
-        echo "${{ secrets.DOCKER_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-        ssh linkerd-docker docker version
-        echo ::set-env name=DOCKER_HOST::ssh://linkerd-docker
-    - name: Setup docker buildx config (Forked repositories)
-      # `docker buildx` doesn't work well with concurrent builds using a remote server
-      # so this step (and Setup docker buildx and Cache docker layers) are only used
-      # when not relying on the Packet host
-      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
-      run: |
-        echo ::set-env name=DOCKER_BUILDKIT::1
-        echo ::set-env name=DOCKER_BUILDKIT_CACHE::${{ runner.temp }}/.buildx-cache
-    - name: Setup docker buildx (Forked repositories)
-      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+    - name: Setup docker buildx
       # crazy-max/ghaction-docker-buildx@v3.2.0
       uses: crazy-max/ghaction-docker-buildx@552c9de
-    - name: Cache docker layers (Forked repositories)
-      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+    - name: Cache docker layers
       # actions/cache@v2.0.0
       uses: actions/cache@b820478
       with:
         path: ${{ env.DOCKER_BUILDKIT_CACHE }}
         key: ${{ runner.os }}-buildx4-${{ matrix.target }}-${{ env.TAG }}
         restore-keys: |
-          ${{ runner.os }}-buildx4-${{ matrix.target }}-
+          ${{ runner.os }}-buildx5-${{ matrix.target }}-
     - name: Build docker images
       env:
         TRACE: 1
