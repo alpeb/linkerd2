@@ -50,9 +50,11 @@ docker_build() {
 
     if [ -n "$DOCKER_BUILDKIT" ]; then
       log_debug "  :; docker buildx $rootdir --cache-from \"type=local,src=${DOCKER_BUILDKIT_CACHE}\" --cache-to \"type=local,dest=${DOCKER_BUILDKIT_CACHE},mode=max\" --load -t "$repo:$tag" -f "$file" $*"
+      # Note using mode=max in --cache-to creates unecessary images and bloats the cache,
+      # which implies long waits when saving/restoring it
       docker buildx build "$rootdir" \
           --cache-from "type=local,src=${DOCKER_BUILDKIT_CACHE}" \
-          --cache-to "type=local,dest=${DOCKER_BUILDKIT_CACHE},mode=max" \
+          --cache-to "type=local,dest=${DOCKER_BUILDKIT_CACHE}" \
           --load \
           -t "$repo:$tag" \
           -f "$file" \

@@ -55,16 +55,16 @@ jobs:
       uses: actions/cache@b820478
       with:
         path: ${{ env.DOCKER_BUILDKIT_CACHE }}
-        key: ${{ runner.os }}-buildx-${{ matrix.target }}-${{ github.sha }}
+        key: ${{ runner.os }}-buildx4-${{ matrix.target }}-${{ env.TAG }}
         restore-keys: |
-          ${{ runner.os }}-buildx-${{ matrix.target }}-
+          ${{ runner.os }}-buildx4-${{ matrix.target }}-
     - name: Build docker images
       env:
         TRACE: 1
         DOCKER_TRACE: 1
       run: |
         export PATH="`pwd`/bin:$PATH"
-        bin/docker-build
+        bin/docker-build-${{ matrix.target }}
     - name: Create artifact with CLI and image archives
       env:
         ARCHIVES: /home/runner/archives
