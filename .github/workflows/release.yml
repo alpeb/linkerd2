@@ -76,12 +76,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     - name: Download CLI
+      shell: bash
       run: |
         TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
         WIN_CMD="target/release/linkerd2-cli-$TAG-windows.exe"
         bin/docker-pull-binaries $TAG
         echo "::set-env name=WIN_CMD::$WIN_CMD"
     - name: Run CLI Integration tests
+      shell: bash
       run: |
         go test --failfast --mod=readonly ".\test\cli" --linkerd=$WIN_CMD --cli-tests -v
   choco_pack:
@@ -89,7 +91,7 @@ jobs:
     # otherwise the jobs below that depend on this one won't run
     name: Pack Chocolatey release
     needs: [docker_build]
-    runs-on: windows-2019
+    runs-on: windows-latest
     steps:
     - name: Checkout code
       if: startsWith(github.ref, 'refs/tags/stable')
