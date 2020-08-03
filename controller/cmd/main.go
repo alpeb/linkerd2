@@ -18,6 +18,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("expected a subcommand")
+		fmt.Println("foobar")
 		os.Exit(1)
 	}
 
