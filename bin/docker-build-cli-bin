@@ -25,8 +25,8 @@ dockerfile=$rootdir/cli/Dockerfile-bin
 tag=$(head_root_tag)
 args=$(get_multiarch_argument)
 SUPPORTED_ARCHS=linux/amd64 docker_build cli-bin "$tag" "$dockerfile" \
-    --build-arg LINKERD_VERSION="$tag" \
-    $args
+    $args \
+    --build-arg LINKERD_VERSION="$tag"
 IMG=$(docker_repo cli-bin):$tag
 ID=$(docker create "$IMG")
 
