@@ -102,95 +102,95 @@ jobs:
     - name: Run CLI Integration tests
       run: |
         go test --failfast --mod=readonly ".\test\cli" --linkerd=$PWD\image-archives\linkerd-windows.exe --cli-tests -v
-  kind_integration_tests:
-    strategy:
-      matrix:
-        integration_test:
-        - cluster-domain
-        - deep
-        - external-issuer
-        - helm-deep
-        - helm-upgrade
-        - uninstall
-        - upgrade-edge
-        - upgrade-stable
-    needs: [docker_build]
-    name: Integration tests (${{ matrix.integration_test }})
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Checkout code
-      # actions/checkout@v2
-      uses: actions/checkout@722adc6
-    - name: Try to load cached Go modules
-      # actions/cache@v1.1.2
-      uses: actions/cache@70655ec
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-    - name: Set environment variables from scripts
-      run: |
-        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
-        CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
-        echo "::set-env name=CMD::$CMD"
-        echo "::set-env name=TAG::$TAG"
-    - name: Run integration tests
-      run: |
-        bin/docker-pull-binaries $TAG
-        # Validate the CLI version matches the current build tag.
-        [[ "$TAG" == "$($CMD version --short --client)" ]]
-        bin/tests --images --name ${{ matrix.integration_test }} "$CMD"
-  # todo: Keep in sync with `cloud_integration.yml`
-  cloud_integration_tests:
-    name: Cloud integration tests
-    runs-on: ubuntu-18.04
-    needs: [docker_build]
-    steps:
-    - name: Checkout code
-      # actions/checkout@v2
-      uses: actions/checkout@722adc6
-    - name: Try to load cached Go modules
-      # actions/cache@v1.1.2
-      uses: actions/cache@70655ec
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-    - name: Install linkerd CLI
-      id: install_cli
-      run: |
-        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
-        CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
-        bin/docker-pull-binaries $TAG
-        $CMD version --client
-        # validate CLI version matches the repo
-        [[ "$TAG" == "$($CMD version --short --client)" ]]
-        echo "Installed Linkerd CLI version: $TAG"
-        echo "::set-env name=CMD::$CMD"
-        echo "::set-output name=tag::$TAG"
-    - name: Create GKE cluster
-      # linkerd/linkerd2-action-gcloud@v1.0.1
-      uses: linkerd/linkerd2-action-gcloud@308c4df
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
-        gcp_project: ${{ secrets.GCP_PROJECT }}
-        gcp_zone: ${{ secrets.GCP_ZONE }}
-        preemptible: false
-        create: true
-        name: testing-${{ steps.install_cli.outputs.tag }}-${{ github.run_id }}
-        num_nodes: 2
-    - name: Run integration tests
-      env:
-        GITCOOKIE_SH: ${{ secrets.GITCOOKIE_SH }}
-      run: |
-        echo "$GITCOOKIE_SH" | bash
-        bin/tests --skip-kind-create "$CMD"
-    - name: CNI tests
-      run: |
-        export TAG="$($CMD version --client --short)"
-        go test -cover -race -v -mod=readonly ./cni-plugin/test -integration-tests
+  # kind_integration_tests:
+  #   strategy:
+  #     matrix:
+  #       integration_test:
+  #       - cluster-domain
+  #       - deep
+  #       - external-issuer
+  #       - helm-deep
+  #       - helm-upgrade
+  #       - uninstall
+  #       - upgrade-edge
+  #       - upgrade-stable
+  #   needs: [docker_build]
+  #   name: Integration tests (${{ matrix.integration_test }})
+  #   runs-on: ubuntu-18.04
+  #   steps:
+  #   - name: Checkout code
+  #     # actions/checkout@v2
+  #     uses: actions/checkout@722adc6
+  #   - name: Try to load cached Go modules
+  #     # actions/cache@v1.1.2
+  #     uses: actions/cache@70655ec
+  #     with:
+  #       path: ~/go/pkg/mod
+  #       key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-go-
+  #   - name: Set environment variables from scripts
+  #     run: |
+  #       TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
+  #       CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
+  #       echo "::set-env name=CMD::$CMD"
+  #       echo "::set-env name=TAG::$TAG"
+  #   - name: Run integration tests
+  #     run: |
+  #       bin/docker-pull-binaries $TAG
+  #       # Validate the CLI version matches the current build tag.
+  #       [[ "$TAG" == "$($CMD version --short --client)" ]]
+  #       bin/tests --images --name ${{ matrix.integration_test }} "$CMD"
+  # # todo: Keep in sync with `cloud_integration.yml`
+  # cloud_integration_tests:
+  #   name: Cloud integration tests
+  #   runs-on: ubuntu-18.04
+  #   needs: [docker_build]
+  #   steps:
+  #   - name: Checkout code
+  #     # actions/checkout@v2
+  #     uses: actions/checkout@722adc6
+  #   - name: Try to load cached Go modules
+  #     # actions/cache@v1.1.2
+  #     uses: actions/cache@70655ec
+  #     with:
+  #       path: ~/go/pkg/mod
+  #       key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-go-
+  #   - name: Install linkerd CLI
+  #     id: install_cli
+  #     run: |
+  #       TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
+  #       CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
+  #       bin/docker-pull-binaries $TAG
+  #       $CMD version --client
+  #       # validate CLI version matches the repo
+  #       [[ "$TAG" == "$($CMD version --short --client)" ]]
+  #       echo "Installed Linkerd CLI version: $TAG"
+  #       echo "::set-env name=CMD::$CMD"
+  #       echo "::set-output name=tag::$TAG"
+  #   - name: Create GKE cluster
+  #     # linkerd/linkerd2-action-gcloud@v1.0.1
+  #     uses: linkerd/linkerd2-action-gcloud@308c4df
+  #     with:
+  #       cloud_sdk_service_account_key: ${{ secrets.CLOUD_SDK_SERVICE_ACCOUNT_KEY }}
+  #       gcp_project: ${{ secrets.GCP_PROJECT }}
+  #       gcp_zone: ${{ secrets.GCP_ZONE }}
+  #       preemptible: false
+  #       create: true
+  #       name: testing-${{ steps.install_cli.outputs.tag }}-${{ github.run_id }}
+  #       num_nodes: 2
+  #   - name: Run integration tests
+  #     env:
+  #       GITCOOKIE_SH: ${{ secrets.GITCOOKIE_SH }}
+  #     run: |
+  #       echo "$GITCOOKIE_SH" | bash
+  #       bin/tests --skip-kind-create "$CMD"
+  #   - name: CNI tests
+  #     run: |
+  #       export TAG="$($CMD version --client --short)"
+  #       go test -cover -race -v -mod=readonly ./cni-plugin/test -integration-tests
   choco_pack:
     # only runs for stable tags. The conditionals are at each step level instead of the job level
     # otherwise the jobs below that depend on this one won't run
