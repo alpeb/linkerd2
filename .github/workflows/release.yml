@@ -242,6 +242,8 @@ jobs:
       with:
         name: choco
     - name: Pull CLI binaries
+      env:
+        DOCKER_MULTIARCH: 1
       run : |
         bin/docker-pull-binaries $TAG
         VERSION=${TAG#"stable-"}
