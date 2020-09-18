@@ -178,7 +178,8 @@ jobs:
         go test -cover -race -v -mod=readonly ./cni-plugin/test -integration-tests
     - name: Test cleanup
       if: ${{ always() }}
-      run: bin/test-cleanup
+      # will fail if other steps didn't run, so ignore error
+      run: bin/test-cleanup || true
   choco_pack:
     # only runs for stable tags. The conditionals are at each step level instead of the job level
     # otherwise the jobs below that depend on this one won't run
