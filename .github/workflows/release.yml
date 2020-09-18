@@ -177,7 +177,7 @@ jobs:
     # only runs for stable tags. The conditionals are at each step level instead of the job level
     # otherwise the jobs below that depend on this one won't run
     name: Pack Chocolatey release
-    needs: [kind_integration_tests, arm64_integration_tests]
+    needs: [kind_integration_tests]
     runs-on: windows-2019
     steps:
     - name: Checkout code
@@ -248,75 +248,3 @@ jobs:
           ./target/release/linkerd2-cli-*-windows.exe
           ./target/release/linkerd2-cli-*-windows.exe.sha256
           ./target/release/linkerd2-cli-*.nupkg
-  website_publish:
-    name: Linkerd website publish
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-18.04
-    needs: [gh_release]
-    steps:
-    - name: Create linkerd/website repository dispatch event
-      # peter-evans/repository-dispatch@v1
-      uses: peter-evans/repository-dispatch@0ae1c4b
-      with:
-        token: ${{ secrets.RELEASE_TOKEN }}
-        repository: linkerd/website
-        event-type: release
-  website_publish_check:
-    name: Linkerd website publish check
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-18.04
-    needs: [website_publish]
-    steps:
-    - name: Checkout code
-      # actions/checkout@v2
-      uses: actions/checkout@722adc6
-    - name: Set environment variables from scripts
-      run: |
-        . bin/_tag.sh
-        echo ::set-env name=TAG::$(CI_FORCE_CLEAN=1 bin/root-tag)
-    - name: Set install target for stable
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: echo ::set-env name=INSTALL::install
-    - name: Set install target for edge
-      if: startsWith(github.ref, 'refs/tags/edge')
-      run: echo ::set-env name=INSTALL::install-edge
-    - name: Check published version
-      run: |
-        until RES=$(curl -sL https://run.linkerd.io/$INSTALL | grep "LINKERD2_VERSION=\${LINKERD2_VERSION:-$TAG}") \
-          || (( count++ >= 10 ))
-        do
-          sleep 30
-        done
-        if [[ -z $RES ]]; then
-          echo "::error::The version '$TAG' was NOT found published in the website"
-          exit 1
-        fi
-  chart_deploy:
-    name: Helm chart deploy
-    runs-on: ubuntu-18.04
-    needs: [gh_release]
-    steps:
-    - name: Checkout code
-      # actions/checkout@v2
-      uses: actions/checkout@722adc6
-    - name: Configure gsutils
-      # linkerd/linkerd2-action-gcloud@v1.0.1
-      uses: linkerd/linkerd2-action-gcloud@308c4df
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.LINKERD_SITE_TOKEN }}
-        gcp_project: ${{ secrets.LINKERD_SITE_PROJECT }}
-        gcp_zone: ${{ secrets.LINKERD_SITE_ZONE }}
-    - name: Edge Helm chart creation and upload
-      if: startsWith(github.ref, 'refs/tags/edge')
-      run: |
-        mkdir -p target/helm
-        gsutil cp gs://helm.linkerd.io/edge/index.yaml target/helm/index-pre.yaml
-        bin/helm-build package
-        gsutil rsync target/helm gs://helm.linkerd.io/edge
-    - name: Stable Helm chart creation and upload
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        mkdir -p target/helm
-        gsutil cp gs://helm.linkerd.io/stable/index.yaml target/helm/index-pre.yaml
-        bin/helm-build package
-        gsutil rsync target/helm gs://helm.linkerd.io/stable
