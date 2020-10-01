@@ -45,4 +45,4 @@ jobs:
         bin/docker-pull-binaries $TAG
         # Validate the CLI version matches the current build tag.
         [[ "$TAG" == "$($CMD version --short --client)" ]]
-        bin/tests --images --name ${{ matrix.integration_test }} "$CMD"
+        bin/tests --name ${{ matrix.integration_test }} "$CMD"
