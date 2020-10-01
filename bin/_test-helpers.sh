@@ -10,7 +10,7 @@ export default_test_names=(deep external-issuer helm-deep helm-upgrade multiclus
 export all_test_names=(cluster-domain "${default_test_names[*]}")
 
 handle_input() {
-  export images=''
+  export images="docker"
   export test_name=''
   export skip_cluster_create=''
 
@@ -39,17 +39,17 @@ Examples:
 
     # Load images from tar files located under the 'image-archives' directory
     # Note: This is primarily for CI
-    ${0##*/} --images /path/to/linkerd
+    ${0##*/} --images archive /path/to/linkerd
 
 Available Commands:
     --name: the argument to this option is the specific test to run
     --skip-cluster-create: skip KinD/k3d cluster creation step and run tests in an existing cluster.
-    -- images: by default load images into the cluster from the local docker cache (docker), or from tar files located under the 'image-archives' directory (archive), or completely skip image loading (skip)."
+    --images: by default load images into the cluster from the local docker cache (docker), or from tar files located under the 'image-archives' directory (archive), or completely skip image loading (skip)."
         exit 0
         ;;
       --images)
         images=$2
-        if [ -z $images ]; then
+        if [ -z "$images" ]; then
           echo 'Error: the argument for --images was not specified'
           exit 1
         fi
@@ -188,11 +188,13 @@ image_load() {
   cluster_name=$2
   case $images in
     docker)
-      "$bindir"/image-load $cluster_type "$cluster_name"
+      "$bindir"/image-load "$cluster_type" "$cluster_name"
       exit_on_err "error calling '$bindir/image-load'"
+      ;;
     archive)
-      "$bindir"/image-load $cluster_type --archive "$cluster_name"
+      "$bindir"/image-load "$cluster_type" --archive "$cluster_name"
       exit_on_err "error calling '$bindir/image-load'"
+      ;;
   esac
 }
 

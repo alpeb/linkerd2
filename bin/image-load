@@ -26,7 +26,7 @@ do
       echo "Available Commands:"
       echo "    --kind: use a KinD cluster (default)."
       echo "    --k3d: use a k3d cluster."
-      echo "    --archive: Load the images from local .tar files in the current directory."
+      echo "    --archive: load the images from local .tar files in the current directory."
       exit 0
       ;;
     --kind)
@@ -35,8 +35,8 @@ do
     --k3d)
       k3d=1
       ;;
-    --archives)
-      archives=1
+    --archive)
+      archive=1
       ;;
     *)
       break
@@ -59,14 +59,14 @@ else
   kind=1
   cluster=${1:-"kind"}
   bin="$bindir"/kind
-  if [ $archives ]; then
+  if [ $archive ]; then
     image_sub_cmd=(load image-archive --name "$cluster")
   else
     image_sub_cmd=(load docker-image --name "$cluster")
   fi
 fi
 
-if [ -z "$archives" ]; then
+if [ -z "$archive" ]; then
   # shellcheck source=_tag.sh
   . "$bindir"/_tag.sh
   # shellcheck source=_docker.sh
@@ -80,8 +80,8 @@ fi
 
 rm -f load_fail
 for img in proxy controller web grafana cli-bin debug cni-plugin ; do
-  if [ $archives ]; then
-    param="image-archives/$img.tar"
+  if [ $archive ]; then
+    param="image-archive/$img.tar"
   else
     param="$DOCKER_REGISTRY/$img:$TAG"
   fi
