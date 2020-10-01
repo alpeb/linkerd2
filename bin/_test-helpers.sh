@@ -183,6 +183,7 @@ start_kind_test() {
   if [ -z "$skip_cluster_create" ]; then
     create_kind_cluster "$name" "$config"
     "$bindir"/image-load --kind ${images:+'--images'} "$name"
+    exit_on_err "error calling '$bindir/image-load'"
   fi
   check_cluster
   run_"$name"_test
