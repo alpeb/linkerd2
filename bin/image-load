@@ -81,7 +81,7 @@ fi
 rm -f load_fail
 for img in proxy controller web grafana cli-bin debug cni-plugin ; do
   if [ $archive ]; then
-    param="image-archive/$img.tar"
+    param="image-archives/$img.tar"
   else
     param="$DOCKER_REGISTRY/$img:$TAG"
   fi
