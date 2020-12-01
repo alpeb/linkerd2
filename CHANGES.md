@@ -1,5 +1,9 @@
 # Changes
 
+## stable-2.9.1
+
+Some notes
+
 ## stable-2.9.0
 
 This release extends Linkerd's zero-config mutual TLS (mTLS) support to all TCP
