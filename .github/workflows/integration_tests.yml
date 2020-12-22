@@ -154,7 +154,7 @@ jobs:
       if: ${{ failure() }}
       run: |
         docker ps
-        id=$(docker ps -q -f name=k3d-k3s-default-server-0)
+        id=$(docker ps | grep -oP '^\S+(?=.*rancher/k3s)')
         echo $id
         docker logs $id > /home/runner/k3d.log
     - name: Upload k3d logs
