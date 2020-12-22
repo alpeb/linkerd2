@@ -150,3 +150,15 @@ jobs:
     - name: Run integration tests
       run: |
         bin/tests --images archive --name ${{ matrix.integration_test }} "$HOME/.linkerd"
+    - name: Pull k3d logs
+      if: ${{ failure() }}
+      run: |
+        id=$(docker ps -q -f name=k3d-k3s-default-server-0)
+        docker logs $id > /home/runner/k3d.log
+    - name: Upload k3d logs
+      if: ${{ failure() }}
+      # actions/upload-artifact@v1
+      uses: actions/upload-artifact@3446296
+      with:
+        name: k3d-log
+        path: /home/runner/k3d.log
