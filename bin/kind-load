@@ -70,6 +70,10 @@ fi
 # the parallel executions below attempt doing so
 "$bindir"/kind version
 
+# This is really to load the kind binary synchronously, before
+# the parallel executions below attempt doing so
+"$bindir"/kind version
+
 rm -f load_fail
 for img in proxy controller web grafana cli-bin debug cni-plugin ; do
   if [ $images ]; then
