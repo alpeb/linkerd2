@@ -47,7 +47,7 @@ jobs:
         bin/docker-pull-binaries $TAG
         # Validate the CLI version matches the current build tag.
         [[ "$TAG" == "$($CMD version --short --client)" ]]
-        bin/tests --images skip --name ${{ matrix.integration_test }} "$CMD"
+        bin/tests --images skip --name ${{ matrix.integration_test }} "$CMD" --skip-cluster-delete
     - name: DEBUG
       if: ${{ always() }}
       # will fail if other steps didn't run, so ignore error
