@@ -48,3 +48,11 @@ jobs:
         # Validate the CLI version matches the current build tag.
         [[ "$TAG" == "$($CMD version --short --client)" ]]
         bin/tests --images skip --name ${{ matrix.integration_test }} "$CMD"
+    - name: DEBUG
+      if: ${{ always() }}
+      # will fail if other steps didn't run, so ignore error
+      run: |
+        bin/kubectl get events -A
+        ps=$(docker ps | grep -oP '^[a-f0-9]+(?=.*k3s:)')
+        echo $ps
+        docker logs $ps
