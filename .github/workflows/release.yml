@@ -103,6 +103,7 @@ jobs:
         CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
         echo "CMD=$CMD" >> $GITHUB_ENV
         echo "TAG=$TAG" >> $GITHUB_ENV
+        echo "DOCKER_REGISTRY=ghcr.io/alpeb" >> $GITHUB_ENV
     - name: Run integration tests
       run: |
         bin/docker-pull-binaries $TAG
