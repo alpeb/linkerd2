@@ -25,7 +25,7 @@ jobs:
         echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
 
         . bin/_docker.sh
-        echo "DOCKER_REGISTRY=ghcr.io/linkerd" >> $GITHUB_ENV
+        echo "DOCKER_REGISTRY=ghcr.io/alpeb" >> $GITHUB_ENV
         echo "DOCKER_BUILDKIT_CACHE=${{ runner.temp }}/.buildx-cache" >> $GITHUB_ENV
     - name: Cache docker layers
       uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
@@ -33,11 +33,12 @@ jobs:
         path: ${{ env.DOCKER_BUILDKIT_CACHE }}
         key: ${{ runner.os }}-buildx-${{ matrix.target }}-${{ env.TAG }}
         restore-keys: ${{ runner.os }}-buildx-${{ matrix.target }}-
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480
     - name: Set up Docker Buildx
-      uses: crazy-max/ghaction-docker-buildx@126d331dc69f4a1aa02452e374835e6a5d565613
+      uses: docker/setup-buildx-action@e673438944759779e411a0f7ceef3ba437dccfa0
     - name: Build & Push Multi Arch Images
       env:
-        #DOCKER_TRACE: 1
         DOCKER_MULTIARCH: 1
         DOCKER_PUSH: 1
       run: |
@@ -67,28 +68,6 @@ jobs:
       with:
         name: image-archives
         path: /home/runner/archives
-  # todo: Keep in sync with `integration_tests.yml`
-  windows_static_cli_tests:
-    name: Static CLI tests (windows)
-    timeout-minutes: 30
-    runs-on: windows-latest
-    needs: [docker_build]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Try to load cached Go modules
-      uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: ${{ runner.os }}-go-
-    - name: Download image archives
-      uses: actions/download-artifact@3be87be14a055c47b01d3bd88f8fe02320a9bb60
-      with:
-        name: image-archives
-        path: image-archives
-    - name: Run CLI Integration tests
-      run: go test --failfast --mod=readonly ".\test\cli" --linkerd=$PWD\image-archives\linkerd-windows.exe --cli-tests -v
   integration_tests:
     strategy:
       matrix:
@@ -130,201 +109,3 @@ jobs:
         # Validate the CLI version matches the current build tag.
         [[ "$TAG" == "$($CMD version --short --client)" ]]
         bin/tests --images preload --name ${{ matrix.integration_test }} "$CMD"
-  arm64_integration_tests:
-    name: ARM64 integration tests
-    timeout-minutes: 60
-    runs-on: ubuntu-20.04
-    needs: [docker_build]
-    steps:
-    - name: Checkout code
-      #if: startsWith(github.ref, 'refs/tags/stable')
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Try to load cached Go modules
-      #if: startsWith(github.ref, 'refs/tags/stable')
-      uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-    - name: Install linkerd CLI
-      #if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
-        CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
-        bin/docker-pull-binaries $TAG
-        $CMD version --client
-        # validate CLI version matches the repo
-        [[ "$TAG" == "$($CMD version --short --client)" ]]
-        echo "Installed Linkerd CLI version: $TAG"
-        echo "CMD=$CMD" >> $GITHUB_ENV
-    - name: Set KUBECONFIG environment variables
-      #if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.ARM64_KUBECONFIG }}" > $HOME/.kube/config
-        echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
-        kubectl cluster-info
-    - name: Run integration tests
-      #if: startsWith(github.ref, 'refs/tags/stable')
-      env:
-        RUN_ARM_TEST: 1
-      run: bin/tests --name deep --images preload --skip-cluster-create "$CMD"
-    - name: CNI tests
-      #if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        export TAG="$($CMD version --client --short)"
-        go test -cover -race -v -mod=readonly ./cni-plugin/test -integration-tests
-    - name: Test cleanup
-      if: ${{ always() }}
-      # will fail if other steps didn't run, so ignore error
-      run: bin/test-cleanup "$CMD" || true
-  choco_pack:
-    # only runs for stable tags. The conditionals are at each step level instead of the job level
-    # otherwise the jobs below that depend on this one won't run
-    name: Pack Chocolatey release
-    timeout-minutes: 30
-    needs: [integration_tests, arm64_integration_tests]
-    runs-on: windows-2019
-    steps:
-    - name: Checkout code
-      if: startsWith(github.ref, 'refs/tags/stable')
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Chocolatey - update nuspec
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        $LINKERD_VERSION=$env:GITHUB_REF.Substring(17)
-        (Get-Content bin\win\linkerd.nuspec).replace('LINKERD_VERSION', $LINKERD_VERSION) | Set-Content bin\win\linkerd.nuspec
-    - name: Chocolatey - pack
-      if: startsWith(github.ref, 'refs/tags/stable')
-      uses: crazy-max/ghaction-chocolatey@d025252287b66c3fb7d795cc8932dec97630cd53
-      with:
-        args: pack bin/win/linkerd.nuspec
-    - name: Chocolatey - upload package
-      if: startsWith(github.ref, 'refs/tags/stable')
-      uses: actions/upload-artifact@27121b0bdffd731efa15d66772be8dc71245d074
-      with:
-        name: choco
-        path: ./linkerd.*.nupkg
-  gh_release:
-    name: Create GH release
-    timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-20.04
-    needs: [choco_pack]
-    permissions:
-      contents: write
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Set environment variables from scripts
-      run: |
-        . bin/_tag.sh
-        . bin/_release.sh
-        echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
-        extract_release_notes NOTES.md
-    - name: Download choco package
-      if: startsWith(github.ref, 'refs/tags/stable')
-      uses: actions/download-artifact@3be87be14a055c47b01d3bd88f8fe02320a9bb60
-      with:
-        name: choco
-        path: choco
-    - name: Pull CLI binaries
-      env:
-        DOCKER_MULTIARCH: 1
-      run : |
-        bin/docker-pull-binaries $TAG
-        VERSION=${TAG#"stable-"}
-        mv choco/linkerd.*.nupkg target/release/linkerd2-cli-stable-$VERSION.nupkg || true
-    - name: Create release
-      id: create_release
-      uses: softprops/action-gh-release@91409e712cf565ce9eff10c87a8d1b11b81757ae
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        draft: false
-        prerelease: false
-        body_path: NOTES.md
-        files: |
-          ./target/release/linkerd2-cli-*-darwin*
-          ./target/release/linkerd2-cli-*-darwin*.sha256
-          ./target/release/linkerd2-cli-*-linux-*
-          ./target/release/linkerd2-cli-*-linux-*.sha256
-          ./target/release/linkerd2-cli-*-windows.exe
-          ./target/release/linkerd2-cli-*-windows.exe.sha256
-          ./target/release/linkerd2-cli-*.nupkg
-  website_publish:
-    name: Linkerd website publish
-    timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-20.04
-    needs: [gh_release]
-    permissions:
-      contents: write
-    steps:
-    - name: Create linkerd/website repository dispatch event
-      uses: peter-evans/repository-dispatch@ce5485de42c9b2622d2ed064be479e8ed65e76f4
-      with:
-        token: ${{ secrets.RELEASE_TOKEN }}
-        repository: linkerd/website
-        event-type: release
-  website_publish_check:
-    name: Linkerd website publish check
-    timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-20.04
-    needs: [website_publish]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Set environment variables from scripts
-      run: |
-        . bin/_tag.sh
-        echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
-    - name: Set install target for stable
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: echo "INSTALL=install" >> $GITHUB_ENV
-    - name: Set install target for edge
-      if: startsWith(github.ref, 'refs/tags/edge')
-      run: echo "INSTALL=install-edge" >> $GITHUB_ENV
-    - name: Check published version
-      run: |
-        until RES=$(curl -sL https://run.linkerd.io/$INSTALL | grep "LINKERD2_VERSION=\${LINKERD2_VERSION:-$TAG}") \
-          || (( count++ >= 10 ))
-        do
-          sleep 30
-        done
-        if [[ -z $RES ]]; then
-          echo "::error::The version '$TAG' was NOT found published in the website"
-          exit 1
-        fi
-  chart_deploy:
-    name: Helm chart deploy
-    timeout-minutes: 30
-    runs-on: ubuntu-20.04
-    needs: [gh_release]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Configure gsutils
-      uses: linkerd/linkerd2-action-gcloud@f01c9de238d33e87029fddb7f2f9a1fb93903b8f
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.LINKERD_SITE_TOKEN }}
-        gcp_project: ${{ secrets.LINKERD_SITE_PROJECT }}
-        gcp_zone: ${{ secrets.LINKERD_SITE_ZONE }}
-    - name: Edge Helm chart creation and upload
-      if: startsWith(github.ref, 'refs/tags/edge')
-      run: |
-        mkdir -p target/helm
-        gsutil cp gs://helm.linkerd.io/edge/index.yaml target/helm/index-pre.yaml
-        bin/helm-build package
-        cp charts/artifacthub-repo-edge.yml target/helm/artifacthub-repo.yml
-        gsutil rsync target/helm gs://helm.linkerd.io/edge
-    - name: Stable Helm chart creation and upload
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        mkdir -p target/helm
-        gsutil cp gs://helm.linkerd.io/stable/index.yaml target/helm/index-pre.yaml
-        bin/helm-build package
-        cp charts/artifacthub-repo-stable.yml target/helm/artifacthub-repo.yml
-        gsutil rsync target/helm gs://helm.linkerd.io/stable
