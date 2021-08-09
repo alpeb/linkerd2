@@ -41,4 +41,3 @@ jobs:
           ./target/release/linkerd2-cli-*-darwin*
           ./target/release/linkerd2-cli-*-linux-*
           ./target/release/linkerd2-cli-*-windows.*
-          ./target/release/linkerd2-cli-*.nupkg
