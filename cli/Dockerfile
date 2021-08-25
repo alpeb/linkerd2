@@ -72,12 +72,15 @@ RUN CGO_ENABLED=0 GOOS=windows go build -o /out/linkerd -tags prod -mod=readonly
 FROM scratch as basic
 COPY LICENSE /linkerd/LICENSE
 COPY --from=linux-amd64 /out/linkerd /out/linkerd-linux-amd64
-COPY --from=darwin /out/linkerd /out/linkerd-darwin
-COPY --from=darwin-arm64 /out/linkerd /out/linkerd-darwin-arm64
-COPY --from=windows /out/linkerd /out/linkerd-windows
 # `ENTRYPOINT` prevents `docker build` from otherwise failing with "Error
 # response from daemon: No command specified."
 ENTRYPOINT ["/out/linkerd-linux-amd64"]
+
+FROM basic as multi-os
+COPY LICENSE /linkerd/LICENSE
+COPY --from=darwin /out/linkerd /out/linkerd-darwin
+COPY --from=darwin-arm64 /out/linkerd /out/linkerd-darwin-arm64
+COPY --from=windows /out/linkerd /out/linkerd-windows
 
 FROM basic as multi-arch
 COPY --from=linux-arm64 /out/linkerd /out/linkerd-linux-arm64
