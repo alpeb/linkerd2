@@ -107,7 +107,7 @@ COPY LICENSE /linkerd/LICENSE
 COPY --from=windows-full /out/linkerd /out/linkerd-windows
 ENTRYPOINT ["/out/linkerd-windows"]
 
-FROM basic as multi-arch
+FROM scratch as multi-arch
 COPY LICENSE /linkerd/LICENSE
 COPY --from=linux-amd64-full /out/linkerd /out/linkerd-linux-amd64
 COPY --from=linux-arm64-full /out/linkerd /out/linkerd-linux-arm64
