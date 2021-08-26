@@ -25,7 +25,7 @@ jobs:
         echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
 
         . bin/_docker.sh
-        echo "DOCKER_REGISTRY=ghcr.io/linkerd" >> $GITHUB_ENV
+        echo "DOCKER_REGISTRY=ghcr.io/alpeb" >> $GITHUB_ENV
         echo "DOCKER_BUILDKIT_CACHE=${{ runner.temp }}/.buildx-cache" >> $GITHUB_ENV
     - name: Cache docker layers
       uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
@@ -39,6 +39,7 @@ jobs:
       uses: docker/setup-buildx-action@abe5d8f79a1606a2d3e218847032f3f2b1726ab0
     - name: Build & Push Multi Arch Images
       env:
+        DOCKER_REGISTRY: ghcr.io/alpeb
         DOCKER_TARGET: multi-arch
         DOCKER_PUSH: 1
       run: |
@@ -53,6 +54,7 @@ jobs:
       # inside windows
       if: matrix.target == 'cli-bin'
       env:
+        DOCKER_REGISTRY: ghcr.io/alpeb
         ARCHIVES: /home/runner/archives
       run: |
         bin/docker-pull-binaries $TAG
@@ -89,7 +91,7 @@ jobs:
         echo "${{ secrets.DOCKER_GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_GHCR_USERNAME }}" --password-stdin
         docker buildx build --push ./policy-controller/ \
           -f ./policy-controller/${{ matrix.arch }}.dockerfile \
-          -t ghcr.io/linkerd/policy-controller:$TAG-${{ matrix.arch }}
+          -t ghcr.io/alpeb/policy-controller:$TAG-${{ matrix.arch }}
 
   policy_controller_manifest:
     runs-on: ubuntu-20.04
@@ -104,22 +106,22 @@ jobs:
         echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
     - name: Create multiarch manifest
       run: |
-        docker manifest create ghcr.io/linkerd/policy-controller:${TAG} \
-            ghcr.io/linkerd/policy-controller:${TAG}-amd64 \
-            ghcr.io/linkerd/policy-controller:${TAG}-arm64 \
-            ghcr.io/linkerd/policy-controller:${TAG}-arm
+        docker manifest create ghcr.io/alpeb/policy-controller:${TAG} \
+            ghcr.io/alpeb/policy-controller:${TAG}-amd64 \
+            ghcr.io/alpeb/policy-controller:${TAG}-arm64 \
+            ghcr.io/alpeb/policy-controller:${TAG}-arm
     - name: Annotate multiarch manifest
       run: |
-        docker manifest annotate ghcr.io/linkerd/policy-controller:$TAG \
-            ghcr.io/linkerd/policy-controller:${TAG}-amd64 --os=linux --arch=amd64
-        docker manifest annotate ghcr.io/linkerd/policy-controller:$TAG \
-            ghcr.io/linkerd/policy-controller:${TAG}-arm64 --os=linux --arch=arm64
-        docker manifest annotate ghcr.io/linkerd/policy-controller:$TAG \
-            ghcr.io/linkerd/policy-controller:${TAG}-arm --os=linux --arch=arm
+        docker manifest annotate ghcr.io/alpeb/policy-controller:$TAG \
+            ghcr.io/alpeb/policy-controller:${TAG}-amd64 --os=linux --arch=amd64
+        docker manifest annotate ghcr.io/alpeb/policy-controller:$TAG \
+            ghcr.io/alpeb/policy-controller:${TAG}-arm64 --os=linux --arch=arm64
+        docker manifest annotate ghcr.io/alpeb/policy-controller:$TAG \
+            ghcr.io/alpeb/policy-controller:${TAG}-arm --os=linux --arch=arm
     - name: Push multiarch manifest
       run: |
         echo "${{ secrets.DOCKER_GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_GHCR_USERNAME }}" --password-stdin
-        docker manifest push ghcr.io/linkerd/policy-controller:$TAG
+        docker manifest push ghcr.io/alpeb/policy-controller:$TAG
 
   # todo: Keep in sync with `integration_tests.yml`
   windows_static_cli_tests:
@@ -179,6 +181,8 @@ jobs:
         echo "CMD=$CMD" >> $GITHUB_ENV
         echo "TAG=$TAG" >> $GITHUB_ENV
     - name: Run integration tests
+      env:
+        DOCKER_REGISTRY: ghcr.io/alpeb
       run: |
         bin/docker-pull-binaries $TAG
         # Validate the CLI version matches the current build tag.
@@ -201,6 +205,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     - name: Install linkerd CLI
+      env:
+        DOCKER_REGISTRY: ghcr.io/alpeb
       run: |
         TAG="$(CI_FORCE_CLEAN=1 bin/root-tag)"
         CMD="$PWD/target/release/linkerd2-cli-$TAG-linux-amd64"
@@ -281,6 +287,8 @@ jobs:
         name: choco
         path: choco
     - name: Pull CLI binaries
+      env:
+        DOCKER_REGISTRY: ghcr.io/alpeb
       run : |
         bin/docker-pull-binaries $TAG
         VERSION=${TAG#"stable-"}
@@ -297,81 +305,3 @@ jobs:
           ./target/release/linkerd2-cli-*-linux-*
           ./target/release/linkerd2-cli-*-windows.*
           ./target/release/linkerd2-cli-*.nupkg
-
-  website_publish:
-    name: Linkerd website publish
-    timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-20.04
-    needs: [gh_release]
-    permissions:
-      contents: write
-    steps:
-    - name: Create linkerd/website repository dispatch event
-      uses: peter-evans/repository-dispatch@ce5485de42c9b2622d2ed064be479e8ed65e76f4
-      with:
-        token: ${{ secrets.RELEASE_TOKEN }}
-        repository: linkerd/website
-        event-type: release
-
-  website_publish_check:
-    name: Linkerd website publish check
-    timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-20.04
-    needs: [website_publish]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Set environment variables from scripts
-      run: |
-        . bin/_tag.sh
-        echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
-    - name: Set install target for stable
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: echo "INSTALL=install" >> $GITHUB_ENV
-    - name: Set install target for edge
-      if: startsWith(github.ref, 'refs/tags/edge')
-      run: echo "INSTALL=install-edge" >> $GITHUB_ENV
-    - name: Check published version
-      run: |
-        until RES=$(curl -sL https://run.linkerd.io/$INSTALL | grep "LINKERD2_VERSION=\${LINKERD2_VERSION:-$TAG}") \
-          || (( count++ >= 10 ))
-        do
-          sleep 30
-        done
-        if [[ -z $RES ]]; then
-          echo "::error::The version '$TAG' was NOT found published in the website"
-          exit 1
-        fi
-
-  chart_deploy:
-    name: Helm chart deploy
-    timeout-minutes: 30
-    runs-on: ubuntu-20.04
-    needs: [gh_release]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - name: Configure gsutils
-      uses: linkerd/linkerd2-action-gcloud@f01c9de238d33e87029fddb7f2f9a1fb93903b8f
-      with:
-        cloud_sdk_service_account_key: ${{ secrets.LINKERD_SITE_TOKEN }}
-        gcp_project: ${{ secrets.LINKERD_SITE_PROJECT }}
-        gcp_zone: ${{ secrets.LINKERD_SITE_ZONE }}
-    - name: Edge Helm chart creation and upload
-      if: startsWith(github.ref, 'refs/tags/edge')
-      run: |
-        mkdir -p target/helm
-        gsutil cp gs://helm.linkerd.io/edge/index.yaml target/helm/index-pre.yaml
-        bin/helm-build package
-        cp charts/artifacthub-repo-edge.yml target/helm/artifacthub-repo.yml
-        gsutil rsync target/helm gs://helm.linkerd.io/edge
-    - name: Stable Helm chart creation and upload
-      if: startsWith(github.ref, 'refs/tags/stable')
-      run: |
-        mkdir -p target/helm
-        gsutil cp gs://helm.linkerd.io/stable/index.yaml target/helm/index-pre.yaml
-        bin/helm-build package
-        cp charts/artifacthub-repo-stable.yml target/helm/artifacthub-repo.yml
-        gsutil rsync target/helm gs://helm.linkerd.io/stable
