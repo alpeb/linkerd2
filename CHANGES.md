@@ -1,5 +1,9 @@
 # Changes
 
+## edge-21.8.4
+
+foobar
+
 ## edge-21.8.3
 
 This release adds support for dynamic inbound policies. The proxy now discovers
