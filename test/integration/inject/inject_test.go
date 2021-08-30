@@ -56,8 +56,8 @@ func TestInjectManualParams(t *testing.T) {
 	injectionValidator := testutil.InjectValidator{
 		DisableIdentity:        true,
 		Version:                "proxy-version",
-		Image:                  "proxy-image",
-		InitImage:              "init-image",
+		Image:                  "ghcr.io/linkerd/proxy-image",
+		InitImage:              "ghcr.io/linkerd/init-image",
 		ImagePullPolicy:        "Never",
 		ControlPort:            123,
 		SkipInboundPorts:       "234,345",
