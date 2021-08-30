@@ -32,7 +32,7 @@ jobs:
     - name: Cache docker layers
       uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
       with:
-        path: ${{ env.DOCKER_BUILDKIT_CACHE }}
+        path: ${{ runner.temp }}/.buildx-cache"
         key: ${{ runner.os }}-buildx-${{ matrix.target }}-${{ env.TAG }}
         restore-keys: |
           ${{ runner.os }}-buildx-${{ matrix.target }}-
