@@ -1,5 +1,9 @@
 # Changes
 
+## edge-21.8.6
+
+foobaz3
+
 ## edge-21.8.5
 
 foobaz2
