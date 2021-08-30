@@ -186,6 +186,10 @@ func (flag *StringFlag) Apply(values *charts.Values) error {
 	return flag.apply(values, flag.Value)
 }
 
+func (flag *StringFlag) Set(value string) error {
+	return flag.flagSet.Set(flag.name, value)
+}
+
 // IsSet returns true if and only if the Flag has been explicitly set with a value.
 func (flag *StringFlag) IsSet() bool {
 	return flag.flagSet.Changed(flag.name)

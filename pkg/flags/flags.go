@@ -12,6 +12,11 @@ import (
 	klog "k8s.io/klog/v2"
 )
 
+const (
+	EnvOverrideNamespace      = "LINKERD_NAMESPACE"
+	EnvOverrideDockerRegistry = "LINKERD_DOCKER_REGISTRY"
+)
+
 // ConfigureAndParse adds flags that are common to all go processes. This
 // func calls flag.Parse(), so it should be called after all other flags have
 // been configured.
