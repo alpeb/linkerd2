@@ -18,8 +18,7 @@ jobs:
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
-    - id: docker-build
-      uses: ./.github/actions/docker-build
+    - uses: ./.github/actions/docker-build
       with:
         docker-registry: ${{ env.DOCKER_REGISTRY }}
         docker-target: multi-arch
@@ -35,9 +34,9 @@ jobs:
         ARCHIVES: /home/runner/archives
         DOCKER_TARGET: windows
       run: |
-        bin/docker-pull-binaries ${{ steps.docker-build.outputs.tag }}
+        bin/docker-pull-binaries $TAG
         mkdir -p $ARCHIVES
-        cp -r $PWD/target/release/linkerd2-cli-${{ steps.docker-build.outputs.tag }}-windows.exe $ARCHIVES/linkerd-windows.exe
+        cp -r $PWD/target/release/linkerd2-cli-$TAG-windows.exe $ARCHIVES/linkerd-windows.exe
     # `with.path` values do not support environment variables yet, so an
     # absolute path is used here.
     # https://github.com/actions/upload-artifact/issues/8
