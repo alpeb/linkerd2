@@ -13,6 +13,12 @@ inputs:
     description: Whether to push the built images to the registry
     required: false
     default: ''
+  docker-ghcr-username:
+    description: GH username under which to push images
+    required: false
+  docker-ghcr-pat:
+    description: GH PAT for docker-ghcr-username
+    required: false
   component:
     description: Image to build
     required: true
@@ -45,7 +51,7 @@ runs:
       shell: bash
       run: |
         if [[ -n "$DOCKER_PUSH" ]];then
-          echo "${{ secrets.DOCKER_GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_GHCR_USERNAME }}" --password-stdin
+          echo "${{ inputs.docker-ghcr-pat }}" | docker login ghcr.io -u "${{ inputs.docker-ghcr-username }}" --password-stdin
         fi
         bin/docker-build-${{ inputs.component }}
     - name: Prune docker layers cache
