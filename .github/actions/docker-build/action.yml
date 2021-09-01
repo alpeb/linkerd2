@@ -69,7 +69,7 @@ runs:
           # windows_static_cli_tests needs this because it can't create linux containers
           DOCKER_TARGET=windows bin/docker-pull-binaries $TAG
           cp $PWD/target/release/linkerd2-cli-$TAG-windows.exe $ARCHIVES/linkerd-windows.exe
-        else
+        elif [[ -z "${{ inputs.docker-push }}" ]]
           docker save "${{ inputs.docker-registry }}/${{ inputs.component }}:$TAG" > $ARCHIVES/${{ inputs.component }}.tar
         fi
     # `with.path` values do not support environment variables yet, so an
