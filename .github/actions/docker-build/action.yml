@@ -25,7 +25,8 @@ inputs:
 outputs:
   tag:
     description: Current linkerd tag, as produced by bin/root-tag
-    value: ${{ env.TAG }}
+    #value: ${{ env.TAG }}
+    value: foobar
 runs:
   using: "composite"
   steps:
