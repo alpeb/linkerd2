@@ -37,7 +37,7 @@ runs:
         path: ${{ env.DOCKER_BUILDKIT_CACHE }}
         key: ${{ runner.os }}-buildx-${{ inputs.component }}-${{ env.TAG }}
         restore-keys: ${{ runner.os }}-buildx-${{ inputs.component }}-
-    # TODO: guard these two with `if: inputs.docker-target == 'multi-arch'
+    # TODO: guard these two with `if: inputs.docker-target == 'multi-arch'`
     # when this get's fixed: https://github.com/actions/runner/issues/834
     - name: Set up QEMU
       uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480
@@ -59,23 +59,3 @@ runs:
       # so we manually do that to avoid bloating the cache
       shell: bash
       run: bin/docker-cache-prune
-    - name: Create artifact with CLI and image archives
-      env:
-        ARCHIVES: /home/runner/archives
-      shell: bash
-      run: |
-        mkdir -p $ARCHIVES
-        if [[ -n "${{ inputs.docker-push }}" ]] && [ "${{ matrix.component }}" = 'cli-bin' ];then
-          # windows_static_cli_tests needs this because it can't create linux containers
-          DOCKER_TARGET=windows bin/docker-pull-binaries $TAG
-          cp $PWD/target/release/linkerd2-cli-$TAG-windows.exe $ARCHIVES/linkerd-windows.exe
-        elif [[ -z "${{ inputs.docker-push }}" ]]; then
-          docker save "${{ inputs.docker-registry }}/${{ inputs.component }}:$TAG" > $ARCHIVES/${{ inputs.component }}.tar
-        fi
-    # `with.path` values do not support environment variables yet, so an
-    # absolute path is used here.
-    # https://github.com/actions/upload-artifact/issues/8
-    - uses: actions/upload-artifact@27121b0bdffd731efa15d66772be8dc71245d074
-      with:
-        name: image-archives
-        path: /home/runner/archives

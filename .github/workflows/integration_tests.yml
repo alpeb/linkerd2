@@ -28,6 +28,21 @@ jobs:
         docker-registry: ${{ env.DOCKER_REGISTRY }}
         docker-target: linux-amd64
         component: ${{ matrix.component }}
+    - name: Create artifact with CLI and image archives
+      env:
+        ARCHIVES: /home/runner/archives
+      run: |
+        mkdir -p $ARCHIVES
+        docker save "$DOCKER_REGISTRY/${{ matrix.component }}:$TAG" > $ARCHIVES/${{ matrix.component }}.tar
+    # `with.path` values do not support environment variables yet, so an
+    # absolute path is used here.
+    # https://github.com/actions/upload-artifact/issues/8
+    - name: Upload artifact
+      uses: actions/upload-artifact@27121b0bdffd731efa15d66772be8dc71245d074
+      with:
+        name: image-archives
+        path: /home/runner/archives
+
   integration_tests:
     strategy:
       matrix:

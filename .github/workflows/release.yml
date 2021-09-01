@@ -26,6 +26,26 @@ jobs:
         docker-ghcr-username: ${{ secrets.DOCKER_GHCR_USERNAME }}
         docker-ghcr-pat: ${{ secrets.DOCKER_GHCR_PAT }}
         component: ${{ matrix.component }}
+    - name: Create artifact with CLI
+      # windows_static_cli_tests below needs this because it can't create linux containers
+      # inside windows
+      if: matrix.component == 'cli-bin'
+      env:
+        ARCHIVES: /home/runner/archives
+        DOCKER_TARGET: windows
+      run: |
+        bin/docker-pull-binaries $TAG
+        mkdir -p $ARCHIVES
+        cp -r $PWD/target/release/linkerd2-cli-$TAG-windows.exe $ARCHIVES/linkerd-windows.exe
+    # `with.path` values do not support environment variables yet, so an
+    # absolute path is used here.
+    # https://github.com/actions/upload-artifact/issues/8
+    - name: Upload artifact
+      if: matrix.target == 'cli-bin'
+      uses: actions/upload-artifact@27121b0bdffd731efa15d66772be8dc71245d074
+      with:
+        name: image-archives
+        path: /home/runner/archives
 
   policy_controller_build:
     runs-on: ubuntu-20.04
