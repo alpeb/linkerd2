@@ -15,8 +15,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout code
-      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+    - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
     - name: Set environment variables from scripts
       run: |
         . bin/_tag.sh
@@ -49,8 +48,7 @@ runs:
     # absolute path is used here.
     #
     # https://github.com/actions/upload-artifact/issues/8
-    - name: Upload artifact
-      uses: actions/upload-artifact@27121b0bdffd731efa15d66772be8dc71245d074
+    - uses: actions/upload-artifact@27121b0bdffd731efa15d66772be8dc71245d074
       with:
         name: image-archives
         path: /home/runner/archives
