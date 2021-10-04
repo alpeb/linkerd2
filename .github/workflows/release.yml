@@ -69,8 +69,8 @@ jobs:
       uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
       with:
         path: ${{ env.DOCKER_BUILDKIT_CACHE }}
-        key: ${{ runner.os }}-buildx-policy-controller-${{ env.TAG }}
-        restore-keys: ${{ runner.os }}-buildx-policy-controller-
+        key: policy-controller-${{ matrix.arch }}-${{ env.TAG }}
+        restore-keys: policy-controller-
     - name: Build ${{ matrix.arch }}
       run: |
         echo "${{ secrets.DOCKER_GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_GHCR_USERNAME }}" --password-stdin
