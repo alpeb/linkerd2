@@ -7,7 +7,7 @@ permissions:
   contents: read
 env:
   GH_ANNOTATION: true
-  DOCKER_REGISTRY: ghcr.io/linkerd
+  DOCKER_REGISTRY: ghcr.io/alpeb
 jobs:
 
   docker_build:
