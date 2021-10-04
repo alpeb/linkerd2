@@ -262,7 +262,7 @@ jobs:
         mv choco/linkerd.*.nupkg target/release/linkerd2-cli-stable-$VERSION.nupkg || true
     - name: Create release
       id: create_release
-      uses: softprops/action-gh-release@fb0163a75bee697a9cfec2c931801de7c7f10042
+      uses: softprops/action-gh-release@6034af24fba4e5a8e975aaa6056554efe4c794d0
       with:
         draft: false
         prerelease: false
