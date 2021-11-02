@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/linkerd/linkerd2/controller/gen/apis/server/v1beta1"
 	"github.com/linkerd/linkerd2/controller/k8s"
 	consts "github.com/linkerd/linkerd2/pkg/k8s"
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,6 +15,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
@@ -57,6 +60,15 @@ type (
 		Addresses       map[ID]Address
 		Labels          map[string]string
 		TopologicalPref []string
+		OpaquePodPorts  podPorts
+	}
+
+	podPorts map[PodID]map[Port]struct{}
+
+	podPortID struct {
+		name      string
+		namespace string
+		port      Port
 	}
 
 	portAndHostname struct {
@@ -125,6 +137,7 @@ type (
 		Add(set AddressSet)
 		Remove(set AddressSet)
 		NoEndpoints(exists bool)
+		UpdateWithServer(set AddressSet)
 	}
 )
 
@@ -149,6 +162,12 @@ func NewEndpointsWatcher(k8sAPI *k8s.API, log *logging.Entry, enableEndpointSlic
 		AddFunc:    ew.addService,
 		DeleteFunc: ew.deleteService,
 		UpdateFunc: func(_, obj interface{}) { ew.addService(obj) },
+	})
+
+	k8sAPI.Srv().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    ew.addServer,
+		DeleteFunc: ew.deleteServer,
+		UpdateFunc: func(_, obj interface{}) { ew.addServer(obj) },
 	})
 
 	if ew.enableEndpointSlices {
@@ -410,6 +429,127 @@ func (ew *EndpointsWatcher) getServicePublisher(id ServiceID) (sp *servicePublis
 	return
 }
 
+func (ew *EndpointsWatcher) addServer(obj interface{}) {
+	server := obj.(*v1beta1.Server)
+
+	// Get the set of pods that the server selects so that we can check if a
+	// port publisher exists for that endpoint, and if so it's new set of
+	// opaque pod ports is received.
+	options, err := createListOptions(server.Spec.PodSelector)
+	if err != nil {
+		ew.log.Errorf("failed to create Server ListOptions: %s", err)
+		return
+	}
+	pods, err := ew.k8sAPI.Client.CoreV1().Pods("").List(context.Background(), options)
+	if err != nil {
+		ew.log.Errorf("failed to list pods: %v", err)
+		return
+	}
+
+	// publishersToUpdate tracks the port publishers that should send new
+	// address sets once the new set of opaque pod ports is created for each
+	// one.
+	publishersToUpdate := make(map[*portPublisher]struct{})
+
+	for _, pod := range pods.Items {
+		port := getPortIntFromPod(pod, server.Spec.Port)
+		for _, sp := range ew.publishers {
+			for _, pp := range sp.ports {
+				for _, addr := range pp.addresses.Addresses {
+					if addr.Pod.Name == pod.Name && addr.Pod.Namespace == pod.Namespace {
+						id := PodID{
+							Name:      addr.Pod.Name,
+							Namespace: addr.Pod.Namespace,
+						}
+						if server.Spec.ProxyProtocol == "opaque" {
+							// The server's protocol is opaque, so we make
+							// sure the pod's matching port is set as opaque
+							// on the address set.
+							if ports, ok := pp.addresses.OpaquePodPorts[id]; ok {
+								ports[port] = struct{}{}
+							} else {
+								ports := map[Port]struct{}{port: {}}
+								pp.addresses.OpaquePodPorts = podPorts{id: ports}
+							}
+						} else {
+							// The server's protocol is not opaque, so we make
+							// sure that if the pod's matching port was
+							// previously marked as opaque then it is cleared.
+							if ports, ok := pp.addresses.OpaquePodPorts[id]; ok {
+								delete(ports, port)
+								if len(ports) == 0 {
+									// There are no more opaque ports for pod
+									// id so delete it from the set.
+									delete(pp.addresses.OpaquePodPorts, id)
+								}
+							}
+						}
+						publishersToUpdate[pp] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+	for pp := range publishersToUpdate {
+		for _, listener := range pp.listeners {
+			listener.UpdateWithServer(pp.addresses)
+		}
+	}
+}
+
+func (ew *EndpointsWatcher) deleteServer(obj interface{}) {
+	server := obj.(*v1beta1.Server)
+
+	// Get the set of pods that the server selects so that we can check if a
+	// port publisher exists for that endpoint, and if so it's set of opaque
+	// pod ports can be deleted.
+	options, err := createListOptions(server.Spec.PodSelector)
+	if err != nil {
+		ew.log.Errorf("failed to create Server ListOptions: %s", err)
+		return
+	}
+	pods, err := ew.k8sAPI.Client.CoreV1().Pods("").List(context.Background(), options)
+	if err != nil {
+		ew.log.Errorf("failed to list pods: %v", err)
+		return
+	}
+
+	// publishersToUpdate tracks the port publishers that should send new
+	// address sets once the existing opaque pod ports have been deleted from
+	// the address set.
+	publishersToUpdate := make(map[*portPublisher]struct{})
+
+	for _, pod := range pods.Items {
+		port := getPortIntFromPod(pod, server.Spec.Port)
+		for _, sp := range ew.publishers {
+			for _, pp := range sp.ports {
+				for _, addr := range pp.addresses.Addresses {
+					if addr.Pod.Name == pod.Name && addr.Pod.Namespace == pod.Namespace {
+						id := PodID{
+							Name:      addr.Pod.Name,
+							Namespace: addr.Pod.Namespace,
+						}
+						if ports, ok := pp.addresses.OpaquePodPorts[id]; ok {
+							delete(ports, port)
+							if len(ports) == 0 {
+								// There are no more opaque ports for pod id
+								// so delete it from the set.
+								delete(pp.addresses.OpaquePodPorts, id)
+							}
+						}
+						publishersToUpdate[pp] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+	for pp := range publishersToUpdate {
+		for _, listener := range pp.listeners {
+			listener.UpdateWithServer(pp.addresses)
+		}
+	}
+}
+
 ////////////////////////
 /// servicePublisher ///
 ////////////////////////
@@ -631,6 +771,7 @@ func (pp *portPublisher) updateEndpointSlice(oldSlice *discovery.EndpointSlice, 
 		Addresses:       make(map[ID]Address),
 		Labels:          pp.addresses.Labels,
 		TopologicalPref: pp.TopologyPref,
+		OpaquePodPorts:  pp.addresses.OpaquePodPorts,
 	}
 
 	for id, address := range pp.addresses.Addresses {
@@ -700,15 +841,14 @@ func metricLabels(resource interface{}) map[string]string {
 }
 
 func (pp *portPublisher) endpointSliceToAddresses(es *discovery.EndpointSlice) AddressSet {
-	addressSet := AddressSet{
-		TopologicalPref: pp.TopologyPref,
-		Labels:          metricLabels(es),
-		Addresses:       make(map[ID]Address),
-	}
-
 	resolvedPort := pp.resolveESTargetPort(es.Ports)
 	if resolvedPort == undefinedEndpointPort {
-		return addressSet
+		return AddressSet{
+			TopologicalPref: pp.TopologyPref,
+			Labels:          metricLabels(es),
+			Addresses:       make(map[ID]Address),
+			OpaquePodPorts:  pp.addresses.OpaquePodPorts,
+		}
 	}
 
 	serviceID, err := getEndpointSliceServiceID(es)
@@ -716,6 +856,9 @@ func (pp *portPublisher) endpointSliceToAddresses(es *discovery.EndpointSlice) A
 		pp.log.Errorf("Could not fetch resource service name:%v", err)
 	}
 
+	serverOpaquePodPorts := pp.getServerOpaquePodPorts()
+	addresses := make(map[ID]Address)
+	opaquePodPorts := make(podPorts)
 	for _, endpoint := range es.Endpoints {
 		if endpoint.Hostname != nil {
 			if pp.hostname != "" && pp.hostname != *endpoint.Hostname {
@@ -740,10 +883,8 @@ func (pp *portPublisher) endpointSliceToAddresses(es *discovery.EndpointSlice) A
 				for k, v := range endpoint.Topology {
 					address.TopologyLabels[k] = v
 				}
-
-				addressSet.Addresses[id] = address
+				addresses[id] = address
 			}
-
 			continue
 		}
 
@@ -754,22 +895,43 @@ func (pp *portPublisher) endpointSliceToAddresses(es *discovery.EndpointSlice) A
 					pp.log.Errorf("Unable to create new address:%v", err)
 					continue
 				}
-
+				ppID := podPortID{
+					name:      endpoint.TargetRef.Name,
+					namespace: endpoint.TargetRef.Namespace,
+					port:      resolvedPort,
+				}
+				if _, ok := serverOpaquePodPorts[ppID]; ok {
+					id := PodID{
+						Name:      endpoint.TargetRef.Name,
+						Namespace: endpoint.TargetRef.Namespace,
+					}
+					if ports, ok := opaquePodPorts[id]; ok {
+						ports[resolvedPort] = struct{}{}
+					} else {
+						ports := map[Port]struct{}{resolvedPort: {}}
+						opaquePodPorts[id] = ports
+					}
+				}
 				for k, v := range endpoint.Topology {
 					address.TopologyLabels[k] = v
 				}
-
-				addressSet.Addresses[id] = address
+				addresses[id] = address
 			}
 		}
 
 	}
-
-	return addressSet
+	return AddressSet{
+		Addresses:       addresses,
+		Labels:          metricLabels(es),
+		TopologicalPref: pp.TopologyPref,
+		OpaquePodPorts:  opaquePodPorts,
+	}
 }
 
 func (pp *portPublisher) endpointsToAddresses(endpoints *corev1.Endpoints) AddressSet {
+	serverOpaquePodPorts := pp.getServerOpaquePodPorts()
 	addresses := make(map[ID]Address)
+	opaquePodPorts := make(podPorts)
 	for _, subset := range endpoints.Subsets {
 		resolvedPort := pp.resolveTargetPort(subset)
 		if resolvedPort == undefinedEndpointPort {
@@ -800,8 +962,22 @@ func (pp *portPublisher) endpointsToAddresses(endpoints *corev1.Endpoints) Addre
 					pp.log.Errorf("Unable to create new address:%v", err)
 					continue
 				}
-				if err != nil {
-					pp.log.Errorf("failed to set opaque port annotation on pod: %s", err)
+				ppID := podPortID{
+					name:      endpoint.TargetRef.Name,
+					namespace: endpoint.TargetRef.Namespace,
+					port:      resolvedPort,
+				}
+				if _, ok := serverOpaquePodPorts[ppID]; ok {
+					id := PodID{
+						Name:      endpoint.TargetRef.Name,
+						Namespace: endpoint.TargetRef.Namespace,
+					}
+					if ports, ok := opaquePodPorts[id]; ok {
+						ports[resolvedPort] = struct{}{}
+					} else {
+						ports := map[Port]struct{}{resolvedPort: {}}
+						opaquePodPorts[id] = ports
+					}
 				}
 				addresses[id] = address
 			}
@@ -811,6 +987,7 @@ func (pp *portPublisher) endpointsToAddresses(endpoints *corev1.Endpoints) Addre
 		Addresses:       addresses,
 		Labels:          metricLabels(endpoints),
 		TopologicalPref: []string{},
+		OpaquePodPorts:  opaquePodPorts,
 	}
 }
 
@@ -917,6 +1094,7 @@ func (pp *portPublisher) updateTopologyPreference() {
 		Addresses:       make(map[ID]Address),
 		Labels:          make(map[string]string),
 		TopologicalPref: pp.TopologyPref,
+		OpaquePodPorts:  pp.addresses.OpaquePodPorts,
 	}
 	for _, listener := range pp.listeners {
 		listener.Add(updatedAddrSet)
@@ -976,6 +1154,44 @@ func (pp *portPublisher) unsubscribe(listener EndpointUpdateListener) {
 	}
 
 	pp.metrics.setSubscribers(len(pp.listeners))
+}
+
+// getServerOpaquePodPorts gets all pods that are selected by Servers with an
+// opaque protocol. This is called when when new Endpoints or EndpointSlices
+// are added and is used to check if any of the new endpoints are selected by
+// a Server that would change the protocol that the backing pod expects.
+func (pp *portPublisher) getServerOpaquePodPorts() map[podPortID]struct{} {
+	podPorts := make(map[podPortID]struct{})
+	objects := pp.k8sAPI.Srv().Informer().GetIndexer().List()
+	for _, object := range objects {
+		server := object.(*v1beta1.Server)
+
+		// If the server's protocol is not opaque, the pods that it selects
+		// do not need to be tracked.
+		if server.Spec.ProxyProtocol != "opaque" {
+			continue
+		}
+
+		options, err := createListOptions(server.Spec.PodSelector)
+		if err != nil {
+			pp.log.Errorf("failed to create Server ListOptions: %s", err)
+			continue
+		}
+		pods, err := pp.k8sAPI.Client.CoreV1().Pods("").List(context.Background(), options)
+		if err != nil {
+			pp.log.Errorf("failed to list pods: %v", err)
+			continue
+		}
+		for _, pod := range pods.Items {
+			id := podPortID{
+				name:      pod.Name,
+				namespace: pod.Namespace,
+				port:      getPortIntFromPod(pod, server.Spec.Port),
+			}
+			podPorts[id] = struct{}{}
+		}
+	}
+	return podPorts
 }
 
 ////////////
@@ -1062,6 +1278,7 @@ func diffAddresses(oldAddresses, newAddresses AddressSet) (add, remove AddressSe
 		Addresses:       addAddresses,
 		Labels:          newAddresses.Labels,
 		TopologicalPref: newAddresses.TopologicalPref,
+		OpaquePodPorts:  newAddresses.OpaquePodPorts,
 	}
 	remove = AddressSet{
 		Addresses:       removeAddresses,
@@ -1097,4 +1314,27 @@ func isValidSlice(es *discovery.EndpointSlice) bool {
 	}
 
 	return true
+}
+
+func createListOptions(selector *metav1.LabelSelector) (metav1.ListOptions, error) {
+	labelMap, err := metav1.LabelSelectorAsMap(selector)
+	if err != nil {
+		return metav1.ListOptions{}, fmt.Errorf("failed to turn Server's podSelector into label selector map: %v", err)
+	}
+	return metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labelMap).String(),
+	}, nil
+}
+
+func getPortIntFromPod(pod corev1.Pod, serverPort intstr.IntOrString) Port {
+	if serverPort.StrVal != "" {
+		for _, c := range pod.Spec.Containers {
+			for _, cp := range c.Ports {
+				if cp.Name == serverPort.StrVal {
+					return uint32(cp.ContainerPort)
+				}
+			}
+		}
+	}
+	return uint32(serverPort.IntVal)
 }
