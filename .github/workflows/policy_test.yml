@@ -1,10 +1,6 @@
 name: Build test
 
-on:
-  push:
-    tags:
-    - "edge-*"
-    - "stable-*"
+on: [pull_request]
 
 permissions:
   contents: read

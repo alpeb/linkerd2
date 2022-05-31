@@ -44,7 +44,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           docker-registry: ghcr.io/linkerd
-          docker-target: linux-amd64
+          docker-target: multi-arch
           component: ${{ matrix.component }}
       # TAG is set by docker-build
       - run: echo $TAG
