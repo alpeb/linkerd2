@@ -43,15 +43,18 @@ jobs:
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
       - uses: ./.github/actions/docker-build
         with:
-          docker-registry: ghcr.io/linkerd
+          docker-registry: docker.com/matei207
           docker-target: multi-arch
+          docker-push: 1
+          docker-ghcr-username: matei207
+          docker-ghcr-pat: ${{ secrets.DOCKER_MATEI_PAT }}
           component: ${{ matrix.component }}
       # TAG is set by docker-build
       - run: echo $TAG
       - name: Create artifact with CLI and image archives
         run: |
           mkdir -p /home/runner/archives
-          docker save "ghcr.io/linkerd/${{ matrix.component }}:$TAG" \
+          docker save "docker.com/matei207/${{ matrix.component }}:$TAG" \
             >/home/runner/archives/${{ matrix.component }}.tar
       - name: Upload artifact
         uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8
