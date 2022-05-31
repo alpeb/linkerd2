@@ -30,6 +30,15 @@ runs:
     run: |
       echo "TAG=$(CI_FORCE_CLEAN=1 bin/root-tag)" >> $GITHUB_ENV
       echo "DOCKER_BUILDKIT_CACHE=${{ runner.temp }}/.buildx-cache" >> $GITHUB_ENV
+  - name: Set Swap Space
+    uses: pierotofy/set-swap-space@v1.0
+    with:
+      swap-size-gb: 10
+  - run: |
+     # Workaround for https://github.com/rust-lang/cargo/issues/8719
+      sudo mkdir -p /var/lib/docker
+      sudo mount -t tmpfs -o size=10G none /var/lib/docker
+      sudo systemctl restart docker
   - name: Cache docker layers
     uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed
     with:
