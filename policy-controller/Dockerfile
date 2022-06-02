@@ -4,7 +4,8 @@ ARG RUNTIME_IMAGE=gcr.io/distroless/cc
 # Builds the controller binary.
 FROM $RUST_IMAGE as build
 ARG TARGETARCH
-ARG TARGET=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p')
+ARG TARGET=''
+RUN TARGET=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p')
 WORKDIR /build
 COPY bin/scurl bin/scurl
 COPY Cargo.toml Cargo.lock .
