@@ -43,11 +43,11 @@ jobs:
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
       - uses: ./.github/actions/docker-build
         with:
-          docker-registry: docker.com/matei207
+          docker-registry: ghcr.io/mateiidavid/linkerd2
           docker-target: multi-arch
           docker-push: 1
           docker-ghcr-username: matei207
-          docker-ghcr-pat: ${{ secrets.DOCKER_MATEI_PAT }}
+          docker-ghcr-pat: ${{ secrets.GHCR_MAT_PAT }}
           component: ${{ matrix.component }}
       # TAG is set by docker-build
       - run: echo $TAG
