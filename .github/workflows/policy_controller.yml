@@ -54,7 +54,7 @@ jobs:
       - name: Create artifact with CLI and image archives
         run: |
           mkdir -p /home/runner/archives
-          docker save "docker.com/matei207/${{ matrix.component }}:$TAG" \
+          docker save "ghcr.io/mateiidavid/linkerd2/${{ matrix.component }}:$TAG" \
             >/home/runner/archives/${{ matrix.component }}.tar
       - name: Upload artifact
         uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8
