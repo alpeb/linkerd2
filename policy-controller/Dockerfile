@@ -1,4 +1,4 @@
-ARG RUST_IMAGE=docker.io/library/rust:1.60.0
+ARG RUST_IMAGE=docker.io/library/rust:1.60.0-buster
 ARG RUNTIME_IMAGE=gcr.io/distroless/cc
 
 # Builds the controller binary.
