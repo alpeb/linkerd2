@@ -54,6 +54,9 @@ jobs:
       - name: Create artifact with CLI and image archives
         run: |
           mkdir -p /home/runner/archives
+          echo "Created archive: $(ls /home/runner/archives)"
+          echo "Pulling ghcr.io/mateiidavid/linkerd2/${{ matrix.component }}:$TAG"
+          docker pull "ghcr.io/mateiidavid/linkerd2/${{ matrix.component }}:$TAG"
           docker save "ghcr.io/mateiidavid/linkerd2/${{ matrix.component }}:$TAG" \
             >/home/runner/archives/${{ matrix.component }}.tar
       - name: Upload artifact
