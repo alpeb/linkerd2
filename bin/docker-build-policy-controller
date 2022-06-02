@@ -18,4 +18,4 @@ bindir=$( cd "${BASH_SOURCE[0]%/*}" && pwd )
 
 dir=$( cd "$bindir"/../policy-controller && pwd )
 arch=$(architecture)
-docker_build policy-controller "${TAG:-$(head_root_tag)}" "$dir/$arch.dockerfile"
+docker_build policy-controller "${TAG:-$(head_root_tag)}" "$dir/Dockerfile"
