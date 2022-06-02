@@ -4,17 +4,17 @@ ARG RUNTIME_IMAGE=gcr.io/distroless/cc
 # Builds the controller binary.
 FROM $RUST_IMAGE as build
 ARG TARGETARCH
-ARG TARGET=''
-RUN TARGET=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p')
 WORKDIR /build
 COPY bin/scurl bin/scurl
 COPY Cargo.toml Cargo.lock .
 COPY policy-controller policy-controller
 RUN cargo new policy-test --lib
-RUN --mount=type=cache,target=target \
+RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
+    --mount=type=cache,target=target \
     --mount=type=cache,from=rust:1.60.0-buster,source=/usr/local/cargo,target=/usr/local/cargo \
-    echo "TARGET: $TARGET" && cargo fetch --target ${TARGET}
-RUN --mount=type=cache,target=target \
+    echo "TARGET: $target" && cargo fetch --target ${target}
+RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
+    --mount=type=cache,target=target \
     --mount=type=cache,from=rust:1.60.0-buster,source=/usr/local/cargo,target=/usr/local/cargo \
     cargo build --frozen --target="$target" --release --package=linkerd-policy-controller && \
     mv "target/${target}/release/linkerd-policy-controller" /tmp/
