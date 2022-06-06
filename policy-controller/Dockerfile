@@ -1,4 +1,4 @@
-ARG RUST_IMAGE=docker.io/library/rust:1.60.0-buster
+ARG RUST_IMAGE=docker.io/library/rust:1.60.0-bullseye
 ARG RUNTIME_IMAGE=gcr.io/distroless/cc
 
 # Builds the controller binary.
@@ -8,6 +8,7 @@ WORKDIR /build
 COPY bin/scurl bin/scurl
 COPY Cargo.toml Cargo.lock .
 COPY policy-controller policy-controller
+RUN apt-get install make
 RUN cargo new policy-test --lib
 RUN --mount=type=cache,target=target \
     --mount=type=cache,from=rust:1.60.0-buster,source=/usr/local/cargo,target=/usr/local/cargo \
@@ -17,7 +18,7 @@ RUN --mount=type=cache,target=target \
     --mount=type=cache,from=rust:1.60.0-buster,source=/usr/local/cargo,target=/usr/local/cargo \
     target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
     cargo build --frozen --target="$target" --release --package=linkerd-policy-controller && \
-    mv "target/${target}/release/linkerd-policy-controller" /tmp/
+    mv "target/release/linkerd-policy-controller" /tmp/
 # Creates a minimal runtime image with the controller binary.
 FROM $RUNTIME_IMAGE
 COPY --from=build /tmp/linkerd-policy-controller /bin/
