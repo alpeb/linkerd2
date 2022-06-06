@@ -10,15 +10,11 @@ COPY Cargo.toml Cargo.lock .
 COPY policy-controller policy-controller
 RUN apt-get install make
 RUN cargo new policy-test --lib
-RUN --mount=type=cache,target=target \
-    --mount=type=cache,from=rust:1.60.0-buster,source=/usr/local/cargo,target=/usr/local/cargo \
-    target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
-    echo "TARGET: $target" && cargo fetch --target $target
-RUN --mount=type=cache,target=target \
-    --mount=type=cache,from=rust:1.60.0-buster,source=/usr/local/cargo,target=/usr/local/cargo \
-    target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
+RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
+    cargo fetch --target $target
+RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
     cargo build --frozen --target="$target" --release --package=linkerd-policy-controller && \
-    mv "target/release/linkerd-policy-controller" /tmp/
+    mv "target/${target}/release/linkerd-policy-controller" /tmp/
 # Creates a minimal runtime image with the controller binary.
 FROM $RUNTIME_IMAGE
 COPY --from=build /tmp/linkerd-policy-controller /bin/
