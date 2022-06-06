@@ -44,7 +44,7 @@ runs:
     uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed
     with:
       path: ${{ env.DOCKER_BUILDKIT_CACHE }}
-      key: ${{ runner.os }}-buildx-${{ inputs.component }}-${{ env.TAG }}
+      key: ${{ runner.os }}-buildx-v1-${{ inputs.component }}-${{ env.TAG }}
       restore-keys: ${{ runner.os }}-buildx-${{ inputs.component }}-
   - name: Set up QEMU
     uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480
