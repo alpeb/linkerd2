@@ -11,8 +11,7 @@ COPY policy-controller policy-controller
 RUN apt-get install make
 RUN cargo new policy-test --lib
 RUN rustup show 
-RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
-    cargo fetch --target $target
+RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p');cargo fetch --target $target
 RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
     cargo build --frozen --target="$target" --release --package=linkerd-policy-controller && \
     mv "target/${target}/release/linkerd-policy-controller" /tmp/
