@@ -88,6 +88,7 @@ See https://github.com/docker/buildx/issues/59 for more details'
         $output_params \
         -t "$repo:$tag" \
         -f "$file" \
+        --memory-swap=-1
         "$@"
 
     echo "$repo:$tag"
