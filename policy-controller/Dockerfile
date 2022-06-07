@@ -10,8 +10,7 @@ COPY Cargo.toml Cargo.lock .
 COPY policy-controller policy-controller
 RUN apt-get install make
 RUN cargo new policy-test --lib
-RUN rustup show \
-    echo "$(rustup show)"
+RUN rustup show 
 RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
     cargo fetch --target $target
 RUN target=$(rustup show | sed -n 's/^Default host: \(.*\)/\1/p'); \
