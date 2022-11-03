@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/go-test/deep"
 	"github.com/linkerd/linkerd2/pkg/version"
@@ -66,12 +67,26 @@ func TestNewValues(t *testing.T) {
 		PodLabels:                    map[string]string{},
 		EnableEndpointSlices:         true,
 		EnablePodDisruptionBudget:    false,
+		PodMonitor: &PodMonitor{
+			Enabled:        false,
+			ScrapeInterval: "10s",
+			ScrapeTimeout:  "10s",
+			Controller: &PodMonitorController{
+				Enabled: true,
+				NamespaceSelector: `matchNames:
+  - {{ .Release.Namespace }}
+  - linkerd-viz
+  - linkerd-jaeger
+`,
+			},
+			ServiceMirror: &PodMonitorComponent{Enabled: true},
+			Proxy:         &PodMonitorComponent{Enabled: true},
+		},
 		PolicyController: &PolicyController{
 			Image: &Image{
 				Name: "cr.l5d.io/linkerd/policy-controller",
 			},
-			LogLevel:           "linkerd=info,warn",
-			DefaultAllowPolicy: "all-unauthenticated",
+			LogLevel: "info",
 			Resources: &Resources{
 				CPU: Constraints{
 					Limit:   "",
@@ -82,12 +97,13 @@ func TestNewValues(t *testing.T) {
 					Request: "",
 				},
 			},
+			ProbeNetworks: []string{"0.0.0.0/0"},
 		},
 		Proxy: &Proxy{
 			EnableExternalProfiles: false,
 			Image: &Image{
 				Name:    "cr.l5d.io/linkerd/proxy",
-				Version: "dev-undefined",
+				Version: "",
 			},
 			LogLevel:  "warn,linkerd=info",
 			LogFormat: "plain",
@@ -113,8 +129,10 @@ func TestNewValues(t *testing.T) {
 			InboundConnectTimeout:  "100ms",
 			OpaquePorts:            "25,587,3306,4444,5432,6379,9300,11211",
 			Await:                  true,
+			DefaultInboundPolicy:   "all-unauthenticated",
 		},
 		ProxyInit: &ProxyInit{
+			IptablesMode:        "legacy",
 			IgnoreInboundPorts:  "4567,4568",
 			IgnoreOutboundPorts: "4567,4568",
 			LogLevel:            "",
@@ -137,6 +155,15 @@ func TestNewValues(t *testing.T) {
 				Name:      "linkerd-proxy-init-xtables-lock",
 				MountPath: "/run",
 			},
+			RunAsRoot: false,
+			RunAsUser: 65534,
+		},
+		NetworkValidator: &NetworkValidator{
+			LogLevel:    "debug",
+			LogFormat:   "plain",
+			ConnectAddr: "1.1.1.1:20001",
+			ListenAddr:  "0.0.0.0:4140",
+			Timeout:     "10s",
 		},
 		Identity: &Identity{
 			ServiceAccountTokenProjection: true,
@@ -239,4 +266,36 @@ func TestNewValues(t *testing.T) {
 			t.Errorf("HA Helm values\n%+v", diff)
 		}
 	})
+}
+
+// TestHAValuesParsing tests whether values commonly used in HA deployments have
+// appropriate types and can be successfully parsed.
+func TestHAValuesParsing(t *testing.T) {
+	yml := `
+enablePodDisruptionBudget: true
+deploymentStrategy:
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 25%
+enablePodAntiAffinity: true
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+    - matchExpressions:
+      - key: cloud.google.com/gke-preemptible
+        operator: DoesNotExist
+nodeSelector:
+  kubernetes.io/os: linux
+proxy:
+  resources:
+    cpu:
+      request: 100m
+    memory:
+      limit: 250Mi
+      request: 20Mi`
+
+	err := yaml.Unmarshal([]byte(yml), &Values{})
+	if err != nil {
+		t.Errorf("Failed to unamarshal HA values from yaml: %v\nValues: %v", err, yml)
+	}
 }

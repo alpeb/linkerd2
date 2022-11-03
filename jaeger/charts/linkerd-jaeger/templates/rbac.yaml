@@ -7,7 +7,10 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: collector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.commonLabels }}
+  labels: {{ toYaml . | trim | nindent 4 }}
+  {{- end }}
 {{- include "partials.image-pull-secrets" .Values.imagePullSecrets }}
 {{ end -}}
 ---
@@ -20,6 +23,7 @@ metadata:
   name: linkerd-jaeger-injector
   labels:
     linkerd.io/extension: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
 - apiGroups: [""]
   resources: ["namespaces"]
@@ -31,6 +35,7 @@ metadata:
   name: linkerd-jaeger-injector
   labels:
     linkerd.io/extension: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 subjects:
 - kind: ServiceAccount
   name: jaeger-injector
@@ -45,7 +50,11 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: jaeger-injector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.commonLabels }}
+  labels:
+    {{ toYaml . | trim | indent 4 }}
+  {{- end }}
 {{- include "partials.image-pull-secrets" .Values.imagePullSecrets }}
 ---
 {{- $host := printf "jaeger-injector.%s.svc" .Release.Namespace }}
@@ -55,7 +64,10 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: jaeger-injector-k8s-tls
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.commonLabels }}
+  labels: {{ toYaml . | trim | nindent 4 }}
+  {{- end }}
 type: kubernetes.io/tls
 data:
   tls.crt: {{ ternary (b64enc (trim $ca.Cert)) (b64enc (trim .Values.webhook.crtPEM)) (empty .Values.webhook.crtPEM) }}
@@ -78,6 +90,7 @@ metadata:
   {{- end }}
   labels:
     linkerd.io/extension: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 webhooks:
 - name: jaeger-injector.linkerd.io
   {{- if .Values.webhook.namespaceSelector }}
@@ -114,6 +127,9 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: jaeger
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.commonLabels }}
+  labels: {{ toYaml . | trim | nindent 4 }}
+  {{- end }}
 {{- include "partials.image-pull-secrets" .Values.imagePullSecrets }}
 {{ end -}}

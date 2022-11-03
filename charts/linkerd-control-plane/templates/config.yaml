@@ -3,10 +3,11 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: linkerd-config
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-component: controller
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 data:
@@ -25,6 +26,9 @@ data:
   {{- end -}}
   {{- if kindIs "map" $values.proxyInjector -}}
     {{- $_ := unset $values.proxyInjector "keyPEM"}}
+  {{- end -}}
+  {{- if kindIs "map" $values.policyValidator -}}
+    {{- $_ := unset $values.policyValidator "keyPEM"}}
   {{- end -}}
   {{- if (empty $values.identityTrustDomain) -}}
   {{- $_ := set $values "identityTrustDomain" $values.clusterDomain}}

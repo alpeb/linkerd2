@@ -7,10 +7,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: collector-config
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 data:
   collector-config: |
     {{- .Values.collector.config | trim | nindent 4 }}
@@ -19,10 +20,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: collector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -57,8 +59,9 @@ metadata:
     app.kubernetes.io/name: collector
     app.kubernetes.io/part-of: Linkerd
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: collector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -74,9 +77,11 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "8888"
         prometheus.io/scrape: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: jaeger
         component: collector
+        {{- with .Values.podLabels }}{{ toYaml . | trim | nindent 8 }}{{- end }}
     spec:
       {{- if .Values.collector.tolerations -}}
       {{- include "linkerd.tolerations" (dict "Values" .Values.collector) | nindent 6 }}
@@ -116,6 +121,8 @@ spec:
         {{- if .Values.collector.resources -}}
         {{- include "partials.resources" .Values.collector.resources | nindent 8 }}
         {{- end }}
+        securityContext:
+          runAsUser: {{.Values.collector.UID | default .Values.defaultUID}}
         volumeMounts:
         - mountPath: /conf
           name: collector-config-val
@@ -137,10 +144,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaeger
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 spec:
   type: ClusterIP
   selector:
@@ -161,8 +169,9 @@ metadata:
     app.kubernetes.io/name: jaeger
     app.kubernetes.io/part-of: Linkerd
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: jaeger
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -176,9 +185,11 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "14269"
         prometheus.io/scrape: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: jaeger
         component: jaeger
+        {{- with .Values.podLabels }}{{ toYaml . | trim | nindent 8 }}{{- end }}
     spec:
       {{- if .Values.jaeger.tolerations -}}
       {{- include "linkerd.tolerations" (dict "Values" .Values.jaeger) | nindent 6 }}
@@ -204,6 +215,8 @@ spec:
         {{- if .Values.jaeger.resources -}}
         {{- include "partials.resources" .Values.jaeger.resources | nindent 8 }}
         {{- end }}
+        securityContext:
+          runAsUser: {{.Values.jaeger.UID | default .Values.defaultUID}}
       dnsPolicy: ClusterFirst
       serviceAccountName: jaeger
 {{ end -}}

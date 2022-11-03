@@ -22,7 +22,6 @@ const DETECT_TIMEOUT: time::Duration = time::Duration::from_secs(10);
 #[clap(name = "policy", about = "A policy resource prototype")]
 struct Args {
     #[clap(
-        parse(try_from_str),
         long,
         default_value = "linkerd=info,warn",
         env = "LINKERD_POLICY_CONTROLLER_LOG"
@@ -65,6 +64,10 @@ struct Args {
 
     #[clap(long, default_value = "linkerd")]
     control_plane_namespace: String,
+
+    /// Network CIDRs of all expected probes.
+    #[clap(long)]
+    probe_networks: Option<IpNets>,
 }
 
 #[tokio::main]
@@ -81,6 +84,7 @@ async fn main() -> Result<()> {
         cluster_networks: IpNets(cluster_networks),
         default_policy,
         control_plane_namespace,
+        probe_networks,
     } = Args::parse();
 
     let server = if admission_controller_disabled {
@@ -97,6 +101,8 @@ async fn main() -> Result<()> {
         .build()
         .await?;
 
+    let probe_networks = probe_networks.map(|IpNets(nets)| nets).unwrap_or_default();
+
     // Build the index data structure, which will be used to process events from all watches
     // The lookup handle is used by the gRPC server.
     let index = Index::shared(ClusterInfo {
@@ -105,6 +111,7 @@ async fn main() -> Result<()> {
         control_plane_ns: control_plane_namespace,
         default_policy,
         default_detect_timeout: DETECT_TIMEOUT,
+        probe_networks,
     });
 
     // Spawn resource indexers that update the index and publish lookups for the gRPC server.
@@ -146,6 +153,11 @@ async fn main() -> Result<()> {
             .instrument(info_span!("networkauthentications")),
     );
 
+    let http_routes = runtime.watch_all::<k8s::policy::HttpRoute>(ListParams::default());
+    tokio::spawn(
+        kubert::index::namespaced(index.clone(), http_routes).instrument(info_span!("httproutes")),
+    );
+
     // Run the gRPC server, serving results by looking up against the index handle.
     tokio::spawn(grpc(
         grpc_addr,
@@ -166,7 +178,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct IpNets(Vec<IpNet>);
 
 impl std::str::FromStr for IpNets {

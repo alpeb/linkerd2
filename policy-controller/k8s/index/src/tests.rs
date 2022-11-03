@@ -1,17 +1,19 @@
 mod annotation;
 mod authorization_policy;
+mod http_routes;
 mod server_authorization;
 
 use crate::{defaults::DefaultPolicy, index::*, server_authorization::ServerSelector, ClusterInfo};
 use ahash::AHashMap as HashMap;
 use kubert::index::IndexNamespacedResource;
 use linkerd_policy_controller_core::{
-    AuthorizationRef, ClientAuthentication, ClientAuthorization, IdentityMatch, InboundServer,
-    IpNet, Ipv4Net, Ipv6Net, NetworkMatch, ProxyProtocol, ServerRef,
+    AuthorizationRef, ClientAuthentication, ClientAuthorization, IdentityMatch, InboundHttpRoute,
+    InboundHttpRouteRef, InboundServer, IpNet, Ipv4Net, Ipv6Net, NetworkMatch, ProxyProtocol,
+    ServerRef,
 };
 use linkerd_policy_controller_k8s_api::{
     self as k8s,
-    api::core::v1::ContainerPort,
+    api::core::v1::{Container, ContainerPort},
     policy::{server::Port, LocalTargetRef, NamespacedTargetRef},
     ResourceExt,
 };
@@ -23,7 +25,7 @@ fn pod_must_exist_for_lookup() {
     let test = TestConfig::default();
     test.index
         .write()
-        .pod_server_rx("ns-0", "pod-0", 8080)
+        .pod_server_rx("ns-0", "pod-0", 8080.try_into().unwrap())
         .expect_err("pod-0.ns-0 must not exist");
 }
 
@@ -55,10 +57,10 @@ const DEFAULTS: [DefaultPolicy; 5] = [
     },
 ];
 
-fn mk_pod(
+pub fn mk_pod_with_containers(
     ns: impl ToString,
     name: impl ToString,
-    containers: impl IntoIterator<Item = (impl ToString, impl IntoIterator<Item = ContainerPort>)>,
+    containers: impl IntoIterator<Item = Container>,
 ) -> k8s::Pod {
     k8s::Pod {
         metadata: k8s::ObjectMeta {
@@ -67,18 +69,24 @@ fn mk_pod(
             ..Default::default()
         },
         spec: Some(k8s::api::core::v1::PodSpec {
-            containers: containers
-                .into_iter()
-                .map(|(name, ports)| k8s::api::core::v1::Container {
-                    name: name.to_string(),
-                    ports: Some(ports.into_iter().collect()),
-                    ..Default::default()
-                })
-                .collect(),
+            containers: containers.into_iter().collect(),
             ..Default::default()
         }),
         ..k8s::Pod::default()
     }
+}
+
+fn mk_pod(
+    ns: impl ToString,
+    name: impl ToString,
+    containers: impl IntoIterator<Item = (impl ToString, impl IntoIterator<Item = ContainerPort>)>,
+) -> k8s::Pod {
+    let containers = containers.into_iter().map(|(name, ports)| Container {
+        name: name.to_string(),
+        ports: Some(ports.into_iter().collect()),
+        ..Default::default()
+    });
+    mk_pod_with_containers(ns, name, containers)
 }
 
 fn mk_server(
@@ -125,7 +133,7 @@ fn mk_default_policy(
             authenticated_only: true,
             cluster_only: false,
         } => Some((
-            AuthorizationRef::Default("all-authenticated".to_string()),
+            AuthorizationRef::Default("all-authenticated"),
             ClientAuthorization {
                 authentication: authed,
                 networks: all_nets,
@@ -135,7 +143,7 @@ fn mk_default_policy(
             authenticated_only: false,
             cluster_only: false,
         } => Some((
-            AuthorizationRef::Default("all-unauthenticated".to_string()),
+            AuthorizationRef::Default("all-unauthenticated"),
             ClientAuthorization {
                 authentication: ClientAuthentication::Unauthenticated,
                 networks: all_nets,
@@ -145,7 +153,7 @@ fn mk_default_policy(
             authenticated_only: true,
             cluster_only: true,
         } => Some((
-            AuthorizationRef::Default("cluster-authenticated".to_string()),
+            AuthorizationRef::Default("cluster-authenticated"),
             ClientAuthorization {
                 authentication: authed,
                 networks: cluster_nets,
@@ -155,7 +163,7 @@ fn mk_default_policy(
             authenticated_only: false,
             cluster_only: true,
         } => Some((
-            AuthorizationRef::Default("cluster-unauthenticated".to_string()),
+            AuthorizationRef::Default("cluster-unauthenticated"),
             ClientAuthorization {
                 authentication: ClientAuthentication::Unauthenticated,
                 networks: cluster_nets,
@@ -166,8 +174,24 @@ fn mk_default_policy(
     .collect()
 }
 
+fn mk_default_routes() -> HashMap<InboundHttpRouteRef, InboundHttpRoute> {
+    Some((
+        InboundHttpRouteRef::Default("default"),
+        InboundHttpRoute::default(),
+    ))
+    .into_iter()
+    .collect()
+}
+
 impl TestConfig {
     fn from_default_policy(default_policy: DefaultPolicy) -> Self {
+        Self::from_default_policy_with_probes(default_policy, vec![])
+    }
+
+    fn from_default_policy_with_probes(
+        default_policy: DefaultPolicy,
+        probe_networks: Vec<IpNet>,
+    ) -> Self {
         let _tracing = Self::init_tracing();
         let cluster_net = "192.0.2.0/24".parse().unwrap();
         let detect_timeout = time::Duration::from_secs(1);
@@ -177,6 +201,7 @@ impl TestConfig {
             identity_domain: "cluster.example.com".into(),
             default_policy,
             default_detect_timeout: detect_timeout,
+            probe_networks,
         };
         let index = Index::shared(cluster.clone());
         Self {
@@ -190,11 +215,12 @@ impl TestConfig {
 
     fn default_server(&self) -> InboundServer {
         InboundServer {
-            reference: ServerRef::Default(self.default_policy.to_string()),
+            reference: ServerRef::Default(self.default_policy.as_str()),
             authorizations: mk_default_policy(self.default_policy, self.cluster.networks.clone()),
             protocol: ProxyProtocol::Detect {
                 timeout: self.detect_timeout,
             },
+            http_routes: mk_default_routes(),
         }
     }
 

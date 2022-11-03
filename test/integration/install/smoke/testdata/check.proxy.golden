@@ -9,7 +9,6 @@ kubernetes-api
 kubernetes-version
 ------------------
 √ is running the minimum Kubernetes API version
-√ is running the minimum kubectl version
 
 linkerd-existence
 -----------------
@@ -19,6 +18,8 @@ linkerd-existence
 √ no unschedulable pods
 √ control plane pods are ready
 √ cluster networks contains all node podCIDRs
+√ cluster networks contains all pods
+√ cluster networks contains all services
 
 linkerd-config
 --------------

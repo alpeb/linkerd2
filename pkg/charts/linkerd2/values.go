@@ -31,7 +31,7 @@ type (
 		ControllerUID                int64                  `json:"controllerUID"`
 		EnableH2Upgrade              bool                   `json:"enableH2Upgrade"`
 		EnablePodAntiAffinity        bool                   `json:"enablePodAntiAffinity"`
-		NodeAffinity                 map[string]string      `json:"nodeAffinity"`
+		NodeAffinity                 map[string]interface{} `json:"nodeAffinity"`
 		EnablePodDisruptionBudget    bool                   `json:"enablePodDisruptionBudget"`
 		WebhookFailurePolicy         string                 `json:"webhookFailurePolicy"`
 		DeploymentStrategy           map[string]interface{} `json:"deploymentStrategy,omitempty"`
@@ -60,9 +60,11 @@ type (
 		PodLabels         map[string]string `json:"podLabels"`
 		PriorityClassName string            `json:"priorityClassName"`
 
+		PodMonitor       *PodMonitor       `json:"podMonitor"`
 		PolicyController *PolicyController `json:"policyController"`
 		Proxy            *Proxy            `json:"proxy"`
 		ProxyInit        *ProxyInit        `json:"proxyInit"`
+		NetworkValidator *NetworkValidator `json:"networkValidator"`
 		Identity         *Identity         `json:"identity"`
 		DebugContainer   *DebugContainer   `json:"debugContainer"`
 		ProxyInjector    *Webhook          `json:"proxyInjector"`
@@ -112,6 +114,7 @@ type (
 		Await                         bool             `json:"await"`
 		DefaultInboundPolicy          string           `json:"defaultInboundPolicy"`
 		AccessLog                     string           `json:"accessLog"`
+		ShutdownGracePeriod           string           `json:"shutdownGracePeriod"`
 	}
 
 	// ProxyInit contains the fields to set the proxy-init container
@@ -128,6 +131,16 @@ type (
 		Resources            *Resources       `json:"resources"`
 		CloseWaitTimeoutSecs int64            `json:"closeWaitTimeoutSecs"`
 		RunAsRoot            bool             `json:"runAsRoot"`
+		RunAsUser            int64            `json:"runAsUser"`
+		IptablesMode         string           `json:"iptablesMode"`
+	}
+
+	NetworkValidator struct {
+		LogLevel    string `json:"logLevel"`
+		LogFormat   string `json:"logFormat"`
+		ConnectAddr string `json:"connectAddr"`
+		ListenAddr  string `json:"listenAddr"`
+		Timeout     string `json:"timeout"`
 	}
 
 	// DebugContainer contains the fields to set the debugging sidecar
@@ -135,12 +148,33 @@ type (
 		Image *Image `json:"image"`
 	}
 
+	// PodMonitor contains the fields to configure the Prometheus Operator `PodMonitor`
+	PodMonitor struct {
+		Enabled        bool                  `json:"enabled"`
+		ScrapeInterval string                `json:"scrapeInterval"`
+		ScrapeTimeout  string                `json:"scrapeTimeout"`
+		Controller     *PodMonitorController `json:"controller"`
+		ServiceMirror  *PodMonitorComponent  `json:"serviceMirror"`
+		Proxy          *PodMonitorComponent  `json:"proxy"`
+	}
+
+	// PodMonitorController contains the fields to configure the Prometheus Operator `PodMonitor` for the control-plane
+	PodMonitorController struct {
+		Enabled           bool   `json:"enabled"`
+		NamespaceSelector string `json:"namespaceSelector"`
+	}
+
+	// PodMonitorComponent contains the fields to configure the Prometheus Operator `PodMonitor` for other components
+	PodMonitorComponent struct {
+		Enabled bool `json:"enabled"`
+	}
+
 	// PolicyController contains the fields to configure the policy controller container
 	PolicyController struct {
-		Image              *Image     `json:"image"`
-		Resources          *Resources `json:"resources"`
-		LogLevel           string     `json:"logLevel"`
-		DefaultAllowPolicy string     `json:"defaultAllowPolicy"`
+		Image         *Image     `json:"image"`
+		Resources     *Resources `json:"resources"`
+		LogLevel      string     `json:"logLevel"`
+		ProbeNetworks []string   `json:"probeNetworks"`
 	}
 
 	// Image contains the details to define a container image
@@ -241,7 +275,6 @@ func NewValues() (*Values, error) {
 		return nil, err
 	}
 
-	v.Proxy.Image.Version = version.Version
 	v.DebugContainer.Image.Version = version.Version
 	v.CliVersion = k8s.CreatedByAnnotationValue()
 	v.ProfileValidator.TLS = &TLS{}

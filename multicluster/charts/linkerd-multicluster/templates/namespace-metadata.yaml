@@ -10,23 +10,29 @@ metadata:
     app.kubernetes.io/name: namespace-metadata
     app.kubernetes.io/part-of: Linkerd
     app.kubernetes.io/version: {{default .Values.linkerdVersion .Values.cliVersion}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: namespace-metadata
 spec:
   template:
     metadata:
       annotations:
         {{ include "partials.annotations.created-by" . }}
+        linkerd.io/inject: disabled
       labels:
         app.kubernetes.io/name: namespace-metadata
         app.kubernetes.io/part-of: Linkerd
         app.kubernetes.io/version: {{default .Values.linkerdVersion .Values.cliVersion}}
+        {{- with .Values.podLabels }}{{ toYaml . | trim | nindent 8 }}{{- end }}
     spec:
       restartPolicy: Never
       serviceAccountName: namespace-metadata
       containers:
       - name: namespace-metadata
-        image: curlimages/curl:7.78.0
+        image: {{.Values.namespaceMetadata.image.registry}}/{{.Values.namespaceMetadata.image.name}}:{{.Values.namespaceMetadata.image.tag}}
+        imagePullPolicy: {{.Values.namespaceMetadata.image.pullPolicy | default .Values.imagePullPolicy}}
         command: ["/bin/sh"]
+        securityContext:
+          runAsUser: {{.Values.gateway.UID}}
         args:
         - -c
         - |

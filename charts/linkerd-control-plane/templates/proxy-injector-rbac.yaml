@@ -9,6 +9,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: proxy-injector
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
 - apiGroups: [""]
   resources: ["events"]
@@ -33,6 +34,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: proxy-injector
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 subjects:
 - kind: ServiceAccount
   name: linkerd-proxy-injector
@@ -47,10 +49,11 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: linkerd-proxy-injector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-component: proxy-injector
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 {{- include "partials.image-pull-secrets" .Values.imagePullSecrets }}
 ---
 {{- $host := printf "linkerd-proxy-injector.%s.svc" .Release.Namespace }}
@@ -60,10 +63,11 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: linkerd-proxy-injector-k8s-tls
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-component: proxy-injector
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 type: kubernetes.io/tls
@@ -89,6 +93,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: proxy-injector
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 webhooks:
 - name: linkerd-proxy-injector.linkerd.io
   namespaceSelector:

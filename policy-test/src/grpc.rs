@@ -12,16 +12,24 @@ use tokio::io;
 #[macro_export]
 macro_rules! assert_is_default_all_unauthenticated {
     ($config:expr) => {
+        assert_default_all_unauthenticated_labels!($config);
+        assert_eq!($config.authorizations.len(), 1);
+    };
+}
+
+#[macro_export]
+macro_rules! assert_default_all_unauthenticated_labels {
+    ($config:expr) => {
         assert_eq!(
             $config.labels,
             vec![
+                ("group".to_string(), "".to_string()),
                 ("kind".to_string(), "default".to_string()),
                 ("name".to_string(), "all-unauthenticated".to_string()),
             ]
             .into_iter()
             .collect()
         );
-        assert_eq!($config.authorizations.len(), 1);
     };
 }
 
@@ -35,7 +43,11 @@ macro_rules! assert_protocol_detect {
             Some(inbound::ProxyProtocol {
                 kind: Some(inbound::proxy_protocol::Kind::Detect(
                     inbound::proxy_protocol::Detect {
-                        timeout: Some(time::Duration::from_secs(10).into()),
+                        timeout: Some(time::Duration::from_secs(10).try_into().unwrap()),
+                        http_routes: vec![
+                            $crate::grpc::defaults::http_route(),
+                            $crate::grpc::defaults::probe_route(),
+                        ],
                     }
                 )),
             }),
@@ -113,7 +125,7 @@ impl PolicyClient {
             .items
             .pop()
             .ok_or_else(|| anyhow::anyhow!("no destination controller pods found"))?;
-        Ok(pod.name())
+        Ok(pod.name_unchecked())
     }
 
     async fn connect_port_forward(
@@ -169,5 +181,95 @@ impl hyper::service::Service<hyper::Request<tonic::body::BoxBody>> for GrpcHttp 
         parts.uri = hyper::Uri::from_parts(uri).unwrap();
 
         self.tx.call(hyper::Request::from_parts(parts, body))
+    }
+}
+
+pub mod defaults {
+    use super::*;
+
+    pub fn proxy_protocol() -> inbound::ProxyProtocol {
+        use inbound::proxy_protocol::{Http1, Kind};
+        inbound::ProxyProtocol {
+            kind: Some(Kind::Http1(Http1 {
+                routes: vec![http_route(), probe_route()],
+            })),
+        }
+    }
+
+    pub fn http_route() -> inbound::HttpRoute {
+        use http_route::{path_match, HttpRouteMatch, PathMatch};
+        use inbound::{http_route::Rule, HttpRoute};
+        use meta::{metadata, Metadata};
+
+        HttpRoute {
+            metadata: Some(Metadata {
+                kind: Some(metadata::Kind::Default("default".to_owned())),
+            }),
+            rules: vec![Rule {
+                matches: vec![HttpRouteMatch {
+                    path: Some(PathMatch {
+                        kind: Some(path_match::Kind::Prefix("/".to_owned())),
+                    }),
+                    ..HttpRouteMatch::default()
+                }],
+                ..Rule::default()
+            }],
+            ..HttpRoute::default()
+        }
+    }
+
+    pub fn probe_route() -> inbound::HttpRoute {
+        use http_route::{path_match, HttpRouteMatch, PathMatch};
+        use inbound::{
+            authn::{Permit, PermitUnauthenticated},
+            http_route::Rule,
+            Authn, Authz, HttpRoute, Network,
+        };
+        use ipnet::IpNet;
+        use maplit::{convert_args, hashmap};
+        use meta::{metadata, Metadata};
+
+        HttpRoute {
+            metadata: Some(Metadata {
+                kind: Some(metadata::Kind::Default("probe".to_string())),
+            }),
+            authorizations: vec![Authz {
+                networks: vec![Network {
+                    net: Some("0.0.0.0/0".parse::<IpNet>().unwrap().into()),
+                    ..Network::default()
+                }],
+                authentication: Some(Authn {
+                    permit: Some(Permit::Unauthenticated(PermitUnauthenticated {})),
+                }),
+                labels: convert_args!(hashmap!(
+                    "kind" => "default",
+                    "name" => "probe",
+                    "group" => "",
+                )),
+                metadata: Some(Metadata {
+                    kind: Some(metadata::Kind::Default("probe".to_string())),
+                }),
+            }],
+            rules: vec![Rule {
+                matches: vec![
+                    HttpRouteMatch {
+                        path: Some(PathMatch {
+                            kind: Some(path_match::Kind::Exact("/live".to_string())),
+                        }),
+                        method: Some(hyper::Method::GET.into()),
+                        ..HttpRouteMatch::default()
+                    },
+                    HttpRouteMatch {
+                        path: Some(PathMatch {
+                            kind: Some(path_match::Kind::Exact("/ready".to_string())),
+                        }),
+                        method: Some(hyper::Method::GET.into()),
+                        ..HttpRouteMatch::default()
+                    },
+                ],
+                ..Rule::default()
+            }],
+            ..HttpRoute::default()
+        }
     }
 }

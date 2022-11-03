@@ -35,7 +35,7 @@ rules:
   resources: ["serviceprofiles"]
   verbs: ["list", "get", "watch"]
 - apiGroups: ["policy.linkerd.io"]
-  resources: ["servers", "serverauthorizations"]
+  resources: ["servers", "serverauthorizations", "authorizationpolicies", "httproutes"]
   verbs: ["list", "get"]
 ---
 kind: ClusterRoleBinding
@@ -242,7 +242,7 @@ rules:
   resources: ["serviceprofiles"]
   verbs: ["list"]
 - apiGroups: [""]
-  resources: ["nodes"]
+  resources: ["nodes", "pods", "services"]
   verbs: ["list"]
 - apiGroups: ["apiregistration.k8s.io"]
   resources: ["apiservices"]
@@ -452,16 +452,17 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ae930acf3edba3cbf32c43dacfa4808bf679c5c932870cb2a2a46de1023f01c8
+        checksum/config: b73fb1bf343c4203fbab8ee108c5eba2e07d184177e204677dc83d4cad2cd12b
         linkerd.io/created-by: linkerd/helm dev-undefined
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: metrics-api
     spec:
       nodeSelector:
         kubernetes.io/os: linux
-      
+
       containers:
       - args:
         - -controller-namespace=linkerd
@@ -490,6 +491,7 @@ spec:
             port: 9995
         resources:
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: 2103
       serviceAccountName: metrics-api
 ---
@@ -603,6 +605,7 @@ spec:
         checksum/config: d6f2ea38c4004667c96eb4fb0135fe0d9d9a87f5c19aaee30e6ccb6ef7219324
         linkerd.io/created-by: linkerd/helm dev-undefined
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: tap
@@ -610,7 +613,7 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: linux
-      
+
       containers:
       - args:
         - api
@@ -641,6 +644,7 @@ spec:
             port: 9998
         resources:
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: 2103
         volumeMounts:
         - mountPath: /var/run/linkerd/tls
@@ -800,13 +804,14 @@ spec:
         checksum/config: 390143015ec83a86ded6630634da5834c8ac7700b93d486a7dc101a15cb87f15
         linkerd.io/created-by: linkerd/helm dev-undefined
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: tap-injector
     spec:
       nodeSelector:
         kubernetes.io/os: linux
-      
+
       containers:
       - args:
         - injector
@@ -834,6 +839,7 @@ spec:
             port: 9995
         resources:
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: 2103
         volumeMounts:
         - mountPath: /var/run/linkerd/tls
@@ -955,6 +961,7 @@ spec:
       annotations:
         linkerd.io/created-by: linkerd/helm dev-undefined
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: web
@@ -967,7 +974,6 @@ spec:
         - -linkerd-metrics-api-addr=metrics-api.linkerd-viz.svc.cluster.local:8085
         - -cluster-domain=cluster.local
         - -controller-namespace=linkerd
-        - -viz-namespace=linkerd-viz
         - -log-level=info
         - -log-format=plain
         - -enforced-host=^(localhost|127\.0\.0\.1|web\.linkerd-viz\.svc\.cluster\.local|web\.linkerd-viz\.svc|\[::1\])(:\d+)?$
@@ -992,6 +998,7 @@ spec:
             port: 9994
         resources:
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: 2103
       serviceAccountName: web
 ---

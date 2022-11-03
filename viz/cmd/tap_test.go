@@ -3,9 +3,9 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/golang/protobuf/ptypes/duration"
@@ -149,7 +149,7 @@ func busyTest(t *testing.T, output string) {
 		goldenFilePath = "testdata/tap_busy_output.golden"
 	}
 
-	goldenFileBytes, err := ioutil.ReadFile(goldenFilePath)
+	goldenFileBytes, err := os.ReadFile(goldenFilePath)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -207,7 +207,7 @@ func TestRequestTapByResourceFromAPI(t *testing.T) {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 
-		goldenFileBytes, err := ioutil.ReadFile("testdata/tap_empty_output.golden")
+		goldenFileBytes, err := os.ReadFile("testdata/tap_empty_output.golden")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -264,14 +264,16 @@ func TestEventToString(t *testing.T) {
 			httpEvent.GetResponseEnd().Id = streamID
 		}
 
+		srcIP, _ := addr.ParsePublicIPV4("1.2.3.4")
+		destIP, _ := addr.ParsePublicIPV4("2.3.4.5")
 		return &tapPb.TapEvent{
 			ProxyDirection: tapPb.TapEvent_OUTBOUND,
 			Source: &netPb.TcpAddress{
-				Ip:   addr.PublicIPV4(1, 2, 3, 4),
+				Ip:   srcIP,
 				Port: 5555,
 			},
 			Destination: &netPb.TcpAddress{
-				Ip:   addr.PublicIPV4(2, 3, 4, 5),
+				Ip:   destIP,
 				Port: 6666,
 			},
 			Event: &tapPb.TapEvent_Http_{Http: httpEvent},
@@ -299,7 +301,7 @@ func TestEventToString(t *testing.T) {
 		})
 
 		expectedOutput := "req id=7:8 proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls= :method=POST :authority=hello.default:7777 :path=/hello.v1.HelloService/Hello"
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}
@@ -316,7 +318,7 @@ func TestEventToString(t *testing.T) {
 		})
 
 		expectedOutput := "rsp id=7:8 proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls= :status=200 latency=999µs"
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}
@@ -337,7 +339,7 @@ func TestEventToString(t *testing.T) {
 		})
 
 		expectedOutput := "end id=7:8 proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls= grpc-status=OK duration=888µs response-length=111B"
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}
@@ -358,7 +360,7 @@ func TestEventToString(t *testing.T) {
 		})
 
 		expectedOutput := "end id=7:8 proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls= reset-error=123 duration=888µs response-length=111B"
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}
@@ -377,7 +379,7 @@ func TestEventToString(t *testing.T) {
 		})
 
 		expectedOutput := "end id=7:8 proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls= duration=888µs response-length=111B"
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}
@@ -395,7 +397,7 @@ func TestEventToString(t *testing.T) {
 		})
 
 		expectedOutput := "end id=7:8 proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls= duration=888µs response-length=111B"
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}
@@ -405,7 +407,7 @@ func TestEventToString(t *testing.T) {
 		event := toTapEvent(&tapPb.TapEvent_Http{})
 
 		expectedOutput := "unknown proxy=out src=1.2.3.4:5555 dst=2.3.4.5:6666 tls="
-		output := renderTapEvent(event, "")
+		output := renderTapEvent(event)
 		if output != expectedOutput {
 			t.Fatalf("Expecting command output to be [%s], got [%s]", expectedOutput, output)
 		}

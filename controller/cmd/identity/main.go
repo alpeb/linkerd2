@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
@@ -22,8 +21,6 @@ import (
 	"github.com/linkerd/linkerd2/pkg/trace"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
-	v1machinery "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -55,7 +52,7 @@ func Main(args []string) {
 
 	flags.ConfigureAndParse(cmd, args)
 
-	identityTrustAnchorPEM, err := ioutil.ReadFile(k8s.MountPathTrustRootsPEM)
+	identityTrustAnchorPEM, err := os.ReadFile(k8s.MountPathTrustRootsPEM)
 	if err != nil {
 		log.Fatalf("could not read identity trust anchors PEM: %s", err.Error())
 	}
@@ -144,8 +141,7 @@ func Main(args []string) {
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{
 		Interface: k8sAPI.CoreV1().Events(""),
 	})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: componentName})
-	deployment, err := k8sAPI.AppsV1().Deployments(*controllerNS).Get(ctx, componentName, v1machinery.GetOptions{})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: componentName})
 
 	if err != nil {
 		log.Fatalf("Failed to construct k8s event recorder: %s", err)
@@ -153,7 +149,12 @@ func Main(args []string) {
 
 	recordEventFunc := func(parent runtime.Object, eventType, reason, message string) {
 		if parent == nil {
-			parent = deployment
+			parent = &corev1.ObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Namespace:  *controllerNS,
+				Name:       componentName,
+			}
 		}
 		recorder.Event(parent, eventType, reason, message)
 	}

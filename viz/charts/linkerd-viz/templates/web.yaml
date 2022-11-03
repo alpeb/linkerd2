@@ -6,11 +6,12 @@ kind: Service
 apiVersion: v1
 metadata:
   name: web
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
     component: web
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
     linkerd.io/inject: enabled
@@ -41,8 +42,9 @@ metadata:
     app.kubernetes.io/version: {{default .Values.linkerdVersion .Values.cliVersion}}
     component: web
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: web
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{.Values.dashboard.replicas}}
   selector:
@@ -59,6 +61,7 @@ spec:
         {{- end }}
         {{- with .Values.podAnnotations }}{{ toYaml . | trim | nindent 8 }}{{- end }}
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: web
@@ -89,7 +92,6 @@ spec:
         - -jaeger-addr={{.Values.jaegerUrl}}
         {{- end}}
         - -controller-namespace={{.Values.linkerdNamespace}}
-        - -viz-namespace={{.Release.Namespace}}
         - -log-level={{.Values.dashboard.logLevel | default .Values.defaultLogLevel}}
         - -log-format={{.Values.dashboard.logFormat | default .Values.defaultLogFormat}}
         {{- if .Values.dashboard.enforcedHostRegexp }}
@@ -122,5 +124,6 @@ spec:
         {{- include "partials.resources" .Values.dashboard.resources | nindent 8 }}
         {{- end }}
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: {{.Values.dashboard.UID | default .Values.defaultUID}}
       serviceAccountName: web

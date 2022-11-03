@@ -1,6 +1,15 @@
 # -- Namespace of the Linkerd core control-plane install
 linkerdNamespace: linkerd
 
+# -- Additional labels to add to all pods
+podLabels: {}
+
+# -- Labels to apply to all resources
+commonLabels: {}
+
+# -- Docker imagePullPolicy for all jaeger components
+imagePullPolicy: IfNotPresent
+
 # -- Default nodeSelector section, See the
 # [K8S documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) for more information
 nodeSelector: &default_node_selector
@@ -21,6 +30,9 @@ tolerations: &default_tolerations
 # `enabledPSP` is set to true on the control plane install. Note PSP has been
 # deprecated since k8s v1.21
 enablePSP: false
+
+# -- Default UID for all the jaeger components
+defaultUID: 2103
 
 # -- Kubernetes DNS Domain name to use
 clusterDomain: cluster.local
@@ -56,6 +68,9 @@ collector:
   # [K8S documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
   # for more information
   tolerations: *default_tolerations
+
+  # -- UID for the collector resource
+  UID:
 
   # -- OpenTelemetry Collector config, See the
   # [Configuration docs](https://opentelemetry.io/docs/collector/configuration/)
@@ -129,7 +144,22 @@ jaeger:
   # for more information
   tolerations: *default_tolerations
 
+  # -- UID for the jaeger resource
+  UID:
+
 linkerdVersion: &linkerd_version linkerdVersionValue
+
+namespaceMetadata:
+  image:
+    # -- Docker registry for the namespace-metadata instance
+    registry: curlimages
+    # -- Docker image name for the namespace-metadata instance
+    name: curl
+    # -- Docker image tag for the namespace-metadata instance
+    tag: 7.78.0
+    # -- Pull policy for the namespace-metadata instance
+    # @default -- imagePullPolicy
+    pullPolicy: ""
 
 webhook:
   # -- Do not create a secret resource for the webhook.
@@ -208,3 +238,6 @@ webhook:
   # [K8S documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
   # for more information
   tolerations: *default_tolerations
+
+  # -- UID for the webhook resource
+  UID:

@@ -23,8 +23,9 @@
 #![deny(warnings, rust_2018_idioms)]
 #![forbid(unsafe_code)]
 
-mod authorization_policy;
+pub mod authorization_policy;
 mod defaults;
+pub mod http_route;
 mod index;
 mod meshtls_authentication;
 mod network_authentication;
@@ -62,6 +63,9 @@ pub struct ClusterInfo {
 
     /// The cluster-wide default protocol detection timeout.
     pub default_detect_timeout: time::Duration,
+
+    /// The networks that probes are expected to be from.
+    pub probe_networks: Vec<IpNet>,
 }
 
 impl ClusterInfo {

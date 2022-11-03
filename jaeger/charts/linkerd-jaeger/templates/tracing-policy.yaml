@@ -3,11 +3,12 @@
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector-otlp
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -20,11 +21,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector-opencensus
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -37,11 +39,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector-zipkin
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -53,11 +56,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector-jaeger-thrift
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -69,11 +73,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector-jaeger-grpc
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -85,11 +90,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector-admin
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -102,11 +108,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: ServerAuthorization
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: collector
   labels:
     linkerd.io/extension: jaeger
     component: collector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -124,11 +131,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: jaeger-grpc
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -141,11 +149,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: ServerAuthorization
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: jaeger-grpc
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -159,11 +168,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: jaeger-admin
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -176,11 +186,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: ServerAuthorization
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: jaeger-admin
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -196,11 +207,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: jaeger-ui
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -213,11 +225,12 @@ spec:
 apiVersion: policy.linkerd.io/v1beta1
 kind: ServerAuthorization
 metadata:
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   name: jaeger-ui
   labels:
     linkerd.io/extension: jaeger
     component: jaeger
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:

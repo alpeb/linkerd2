@@ -6,7 +6,7 @@ set +e
 
 ##### Test setup helpers #####
 
-export default_test_names=(deep viz external helm-upgrade uninstall upgrade-edge upgrade-stable default-policy-deny)
+export default_test_names=(deep viz external helm-upgrade uninstall upgrade-edge upgrade-stable default-policy-deny rsa-ca)
 export external_resource_test_names=(external-resources)
 export all_test_names=(cluster-domain cni-calico-deep multicluster "${default_test_names[*]}" "${external_resource_test_names[*]}")
 images_load_default=(proxy controller policy-controller web metrics-api tap)
@@ -126,7 +126,7 @@ handle_tests_input() {
           tests_usage "$0" >&2
           exit 64
         fi
-        linkerd_path=$1
+        linkerd_path=$(realpath "$1")
         shift
         ;;
     esac
@@ -197,10 +197,6 @@ test_setup() {
 
 check_linkerd_binary() {
   printf 'Checking the linkerd binary...'
-  if [[ "$linkerd_path" != /* ]]; then
-    printf '\n[%s] is not an absolute path\n' "$linkerd_path"
-    exit 1
-  fi
   if [ ! -x "$linkerd_path" ]; then
     printf '\n[%s] does not exist or is not executable\n' "$linkerd_path"
     exit 1
@@ -236,7 +232,7 @@ setup_min_cluster() {
 
   test_setup
   if [ -z "$skip_cluster_create" ]; then
-    "$bindir"/k3d cluster create "$@" --image +v1.20
+    "$bindir"/k3d cluster create "$@" --image +v1.21
     image_load "$name"
   fi
   check_cluster
@@ -378,7 +374,7 @@ run_test(){
 
   printf 'Test script: [%s] Params: [%s]\n' "${filename##*/}" "$*"
   # Exit on failure here
-  GO111MODULE=on go test -test.timeout=60m --failfast --mod=readonly "$filename" --linkerd="$linkerd_path" --helm-path="$helm_path" --default-allow-policy="$default_allow_policy" --k8s-context="$context" --integration-tests "$@" || exit 1
+  GO111MODULE=on go test -test.timeout=60m --failfast --mod=readonly "$filename" --linkerd="$linkerd_path" --helm-path="$helm_path" --default-inbound-policy="$default_inbound_policy" --k8s-context="$context" --integration-tests "$@" || exit 1
 }
 
 # Returns the latest version for the release channel
@@ -460,12 +456,16 @@ run_deep_test() {
 }
 
 run_default-policy-deny_test() {
-  export default_allow_policy='deny'
+  export default_inbound_policy='deny'
   run_test "$test_directory/install/install_test.go" 
 }
 
 run_cni-calico-deep_test() {
   run_test "$test_directory/deep/..." --cni
+}
+
+run_rsa-ca_test() {
+  run_test "$test_directory/rsa-ca/..."
 }
 
 run_external_test() {

@@ -7,11 +7,12 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: prometheus-config
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
     component: prometheus
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 data:
@@ -162,11 +163,12 @@ kind: Service
 apiVersion: v1
 metadata:
   name: prometheus
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
     component: prometheus
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
     linkerd.io/inject: enabled
@@ -194,8 +196,9 @@ metadata:
     app.kubernetes.io/version: {{default .Values.linkerdVersion .Values.cliVersion}}
     component: prometheus
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: prometheus
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   {{- if .Values.prometheus.persistence }}
@@ -264,6 +267,7 @@ spec:
         {{- include "partials.resources" .Values.prometheus.resources | nindent 8 }}
         {{- end }}
         securityContext:
+          readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 65534
           runAsGroup: 65534
@@ -308,8 +312,9 @@ metadata:
     app.kubernetes.io/part-of: Linkerd
     app.kubernetes.io/version: {{default .Values.linkerdVersion}}
     component: prometheus
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: prometheus
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
     - {{ .Values.prometheus.persistence.accessMode | quote }}

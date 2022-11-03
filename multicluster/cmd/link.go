@@ -109,25 +109,17 @@ A full list of configurable values can be found at https://github.com/linkerd/li
 				return err
 			}
 
-			var secretName string
-			for _, s := range sa.Secrets {
-				if strings.HasPrefix(s.Name, fmt.Sprintf("%s-token", sa.Name)) {
-					secretName = s.Name
-					break
-				}
+			listOpts := metav1.ListOptions{
+				FieldSelector: fmt.Sprintf("type=%s", corev1.SecretTypeServiceAccountToken),
 			}
-			if secretName == "" {
-				return fmt.Errorf("could not find service account token secret for %s", sa.Name)
-			}
-
-			secret, err := k.CoreV1().Secrets(opts.namespace).Get(cmd.Context(), secretName, metav1.GetOptions{})
+			secrets, err := k.CoreV1().Secrets(opts.namespace).List(cmd.Context(), listOpts)
 			if err != nil {
 				return err
 			}
 
-			token, ok := secret.Data[tokenKey]
-			if !ok {
-				return fmt.Errorf("could not find the token data in the service account secret")
+			token, err := extractSAToken(secrets.Items, sa.Name)
+			if err != nil {
+				return err
 			}
 
 			context, ok := config.Contexts[config.CurrentContext]
@@ -141,7 +133,7 @@ A full list of configurable values can be found at https://github.com/linkerd/li
 			}
 			config.AuthInfos = map[string]*api.AuthInfo{
 				opts.serviceAccountName: {
-					Token: string(token),
+					Token: token,
 				},
 			}
 
@@ -252,49 +244,6 @@ A full list of configurable values can be found at https://github.com/linkerd/li
 			}
 
 			values, err := buildServiceMirrorValues(opts)
-
-			if err != nil {
-				return err
-			}
-
-			// Render raw values and create chart config
-			rawValues, err := yaml.Marshal(values)
-			if err != nil {
-				return err
-			}
-
-			files := []*chartloader.BufferedFile{
-				{Name: chartutil.ChartfileName},
-				{Name: "templates/service-mirror.yaml"},
-				{Name: "templates/psp.yaml"},
-				{Name: "templates/gateway-mirror.yaml"},
-			}
-
-			var partialFiles []*chartloader.BufferedFile
-			for _, template := range charts.L5dPartials {
-				partialFiles = append(partialFiles,
-					&chartloader.BufferedFile{Name: template},
-				)
-			}
-
-			// Load all multicluster link chart files into buffer
-			if err := charts.FilesReader(static.Templates, helmMulticlusterLinkDefaultChartName+"/", files); err != nil {
-				return err
-			}
-
-			// Load all partial chart files into buffer
-			if err := charts.FilesReader(partials.Templates, "", partialFiles); err != nil {
-				return err
-			}
-
-			// Create a Chart obj from the files
-			chart, err := chartloader.LoadFiles(append(files, partialFiles...))
-			if err != nil {
-				return err
-			}
-
-			// Store final Values generated from values.yaml and CLI flags
-			err = yaml.Unmarshal(rawValues, &chart.Values)
 			if err != nil {
 				return err
 			}
@@ -305,39 +254,16 @@ A full list of configurable values can be found at https://github.com/linkerd/li
 				return err
 			}
 
-			vals, err := chartutil.CoalesceValues(chart, valuesOverrides)
+			serviceMirrorOut, err := renderServiceMirror(values, valuesOverrides, opts.namespace)
 			if err != nil {
 				return err
-			}
-
-			fullValues := map[string]interface{}{
-				"Values": vals,
-				"Release": map[string]interface{}{
-					"Namespace": opts.namespace,
-					"Service":   "CLI",
-				},
-			}
-
-			// Attach the final values into the `Values` field for rendering to work
-			renderedTemplates, err := engine.Render(chart, fullValues)
-			if err != nil {
-				return err
-			}
-
-			// Merge templates and inject
-			var serviceMirrorOut bytes.Buffer
-			for _, tmpl := range chart.Templates {
-				t := path.Join(chart.Metadata.Name, tmpl.Name)
-				if _, err := serviceMirrorOut.WriteString(renderedTemplates[t]); err != nil {
-					return err
-				}
 			}
 
 			stdout.Write(credsOut)
 			stdout.Write([]byte("---\n"))
 			stdout.Write(linkOut)
 			stdout.Write([]byte("---\n"))
-			stdout.Write(serviceMirrorOut.Bytes())
+			stdout.Write(serviceMirrorOut)
 			stdout.Write([]byte("---\n"))
 
 			return nil
@@ -366,6 +292,80 @@ A full list of configurable values can be found at https://github.com/linkerd/li
 	return cmd
 }
 
+func renderServiceMirror(values *multicluster.Values, valuesOverrides map[string]interface{}, namespace string) ([]byte, error) {
+	files := []*chartloader.BufferedFile{
+		{Name: chartutil.ChartfileName},
+		{Name: "templates/service-mirror.yaml"},
+		{Name: "templates/psp.yaml"},
+		{Name: "templates/gateway-mirror.yaml"},
+	}
+
+	var partialFiles []*chartloader.BufferedFile
+	for _, template := range charts.L5dPartials {
+		partialFiles = append(partialFiles,
+			&chartloader.BufferedFile{Name: template},
+		)
+	}
+
+	// Load all multicluster link chart files into buffer
+	if err := charts.FilesReader(static.Templates, helmMulticlusterLinkDefaultChartName+"/", files); err != nil {
+		return nil, err
+	}
+
+	// Load all partial chart files into buffer
+	if err := charts.FilesReader(partials.Templates, "", partialFiles); err != nil {
+		return nil, err
+	}
+
+	// Create a Chart obj from the files
+	chart, err := chartloader.LoadFiles(append(files, partialFiles...))
+	if err != nil {
+		return nil, err
+	}
+
+	// Render raw values and create chart config
+	rawValues, err := yaml.Marshal(values)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store final Values generated from values.yaml and CLI flags
+	err = yaml.Unmarshal(rawValues, &chart.Values)
+	if err != nil {
+		return nil, err
+	}
+
+	vals, err := chartutil.CoalesceValues(chart, valuesOverrides)
+	if err != nil {
+		return nil, err
+	}
+
+	fullValues := map[string]interface{}{
+		"Values": vals,
+		"Release": map[string]interface{}{
+			"Namespace": namespace,
+			"Service":   "CLI",
+		},
+	}
+
+	// Attach the final values into the `Values` field for rendering to work
+	renderedTemplates, err := engine.Render(chart, fullValues)
+	if err != nil {
+		return nil, err
+	}
+
+	// Merge templates and inject
+	var out bytes.Buffer
+	for _, tmpl := range chart.Templates {
+		t := path.Join(chart.Metadata.Name, tmpl.Name)
+		if _, err := out.WriteString(renderedTemplates[t]); err != nil {
+			return nil, err
+		}
+	}
+
+	return out.Bytes(), nil
+}
+
 func newLinkOptionsWithDefault() (*linkOptions, error) {
 	defaults, err := multicluster.NewLinkValues()
 	if err != nil {
@@ -378,7 +378,7 @@ func newLinkOptionsWithDefault() (*linkOptions, error) {
 		dockerRegistry:          defaultDockerRegistry,
 		serviceMirrorRetryLimit: defaults.ServiceMirrorRetryLimit,
 		logLevel:                defaults.LogLevel,
-		selector:                k8s.DefaultExportedServiceSelector,
+		selector:                fmt.Sprintf("%s=%s", k8s.DefaultExportedServiceSelector, "true"),
 		gatewayAddresses:        "",
 		gatewayPort:             0,
 	}, nil
@@ -414,4 +414,32 @@ func buildServiceMirrorValues(opts *linkOptions) (*multicluster.Values, error) {
 	defaults.ControllerImage = fmt.Sprintf("%s/controller", opts.dockerRegistry)
 
 	return defaults, nil
+}
+
+func extractGatewayPort(gateway *corev1.Service) (uint32, error) {
+	for _, port := range gateway.Spec.Ports {
+		if port.Name == k8s.GatewayPortName {
+			if gateway.Spec.Type == "NodePort" {
+				return uint32(port.NodePort), nil
+			}
+			return uint32(port.Port), nil
+		}
+	}
+	return 0, fmt.Errorf("gateway service %s has no gateway port named %s", gateway.Name, k8s.GatewayPortName)
+}
+
+func extractSAToken(secrets []corev1.Secret, saName string) (string, error) {
+	for _, secret := range secrets {
+		boundSA := secret.Annotations[saNameAnnotationKey]
+		if saName == boundSA {
+			token, ok := secret.Data[tokenKey]
+			if !ok {
+				return "", fmt.Errorf("could not find the token data in service account secret %s", secret.Name)
+			}
+
+			return string(token), nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find service account token secret for %s", saName)
 }

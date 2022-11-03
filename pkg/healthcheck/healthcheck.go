@@ -66,6 +66,11 @@ const (
 	// checks must be added first.
 	LinkerdPreInstallChecks CategoryID = "pre-kubernetes-setup"
 
+	// LinkerdCRDChecks adds checks to validate that the control plane CRDs
+	// exist. These checks can be run after installing the control plane CRDs
+	// but before installing the control plane itself.
+	LinkerdCRDChecks CategoryID = "linkerd-crd"
+
 	// LinkerdConfigChecks enabled by `linkerd check config`
 
 	// LinkerdConfigChecks adds a series of checks to validate that the Linkerd
@@ -534,13 +539,6 @@ func (hc *HealthChecker) allCategories() []*Category {
 						return hc.kubeAPI.CheckVersion(hc.kubeVersion)
 					},
 				},
-				{
-					description: "is running the minimum kubectl version",
-					hintAnchor:  "kubectl-version",
-					check: func(context.Context) error {
-						return k8s.CheckKubectlVersion()
-					},
-				},
 			},
 			false,
 		),
@@ -629,6 +627,21 @@ func (hc *HealthChecker) allCategories() []*Category {
 			false,
 		),
 		NewCategory(
+			LinkerdCRDChecks,
+			[]Checker{
+				{
+					description:   "control plane CustomResourceDefinitions exist",
+					hintAnchor:    "l5d-existence-crd",
+					fatal:         true,
+					retryDeadline: hc.RetryDeadline,
+					check: func(ctx context.Context) error {
+						return CheckCustomResourceDefinitions(ctx, hc.kubeAPI, hc.CRDManifest)
+					},
+				},
+			},
+			false,
+		),
+		NewCategory(
 			LinkerdControlPlaneExistenceChecks,
 			[]Checker{
 				{
@@ -688,32 +701,14 @@ func (hc *HealthChecker) allCategories() []*Category {
 					fatal:               true,
 					check: func(ctx context.Context) error {
 						var err error
-						hc.controlPlanePods, err = hc.kubeAPI.GetPodsByNamespace(ctx, hc.ControlPlaneNamespace)
+						podList, err := hc.kubeAPI.CoreV1().Pods(hc.ControlPlaneNamespace).List(ctx, metav1.ListOptions{
+							LabelSelector: k8s.ControllerComponentLabel,
+						})
 						if err != nil {
 							return err
 						}
+						hc.controlPlanePods = podList.Items
 						return validateControlPlanePods(hc.controlPlanePods)
-					},
-				},
-				{
-					description: "cluster networks can be verified",
-					hintAnchor:  "l5d-cluster-networks-verified",
-					warning:     true,
-					check: func(ctx context.Context) error {
-						nodes, err := hc.kubeAPI.GetNodes(ctx)
-						if err != nil {
-							return err
-						}
-						var warningNodes []string
-						for _, node := range nodes {
-							if node.Spec.PodCIDR == "" {
-								warningNodes = append(warningNodes, node.Name)
-							}
-						}
-						if len(warningNodes) > 0 {
-							return fmt.Errorf("the following nodes do not expose a podCIDR:\n\t%s", strings.Join(warningNodes, "\n\t"))
-						}
-						return nil
 					},
 				},
 				{
@@ -727,6 +722,20 @@ func (hc *HealthChecker) allCategories() []*Category {
 							return err
 						}
 						return hc.checkClusterNetworks(ctx)
+					},
+				},
+				{
+					description: "cluster networks contains all pods",
+					hintAnchor:  "l5d-cluster-networks-pods",
+					check: func(ctx context.Context) error {
+						return hc.checkClusterNetworksContainAllPods(ctx)
+					},
+				},
+				{
+					description: "cluster networks contains all services",
+					hintAnchor:  "l5d-cluster-networks-pods",
+					check: func(ctx context.Context) error {
+						return hc.checkClusterNetworksContainAllServices(ctx)
 					},
 				},
 			},
@@ -935,7 +944,7 @@ func (hc *HealthChecker) allCategories() []*Category {
 					check: func(context.Context) error {
 						var invalidAnchors []string
 						for _, anchor := range hc.trustAnchors {
-							if err := issuercerts.CheckCertAlgoRequirements(anchor); err != nil {
+							if err := issuercerts.CheckTrustAnchorAlgoRequirements(anchor); err != nil {
 								invalidAnchors = append(invalidAnchors, fmt.Sprintf("* %v %s %s", anchor.SerialNumber, anchor.Subject.CommonName, err))
 							}
 						}
@@ -985,7 +994,7 @@ func (hc *HealthChecker) allCategories() []*Category {
 					hintAnchor:  "l5d-identity-issuer-cert-uses-supported-crypto",
 					fatal:       true,
 					check: func(context.Context) error {
-						if err := issuercerts.CheckCertAlgoRequirements(hc.issuerCert.Certificate); err != nil {
+						if err := issuercerts.CheckIssuerCertAlgoRequirements(hc.issuerCert.Certificate); err != nil {
 							return fmt.Errorf("issuer certificate %w", err)
 						}
 						return nil
@@ -1878,6 +1887,66 @@ func cluterNetworksContainCIDR(clusterIPNets []*net.IPNet, podIPNet *net.IPNet, 
 	return false
 }
 
+func clusterNetworksContainIP(clusterIPNets []*net.IPNet, ip string) bool {
+	for _, clusterIPNet := range clusterIPNets {
+		if clusterIPNet.Contains(net.ParseIP(ip)) {
+			return true
+		}
+	}
+	return false
+}
+
+func (hc *HealthChecker) checkClusterNetworksContainAllPods(ctx context.Context) error {
+	clusterNetworks := strings.Split(hc.linkerdConfig.ClusterNetworks, ",")
+	clusterIPNets := make([]*net.IPNet, len(clusterNetworks))
+	var err error
+	for i, clusterNetwork := range clusterNetworks {
+		_, clusterIPNets[i], err = net.ParseCIDR(clusterNetwork)
+		if err != nil {
+			return err
+		}
+	}
+	pods, err := hc.kubeAPI.CoreV1().Pods(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		if pod.Spec.HostNetwork {
+			continue
+		}
+		if len(pod.Status.PodIP) == 0 {
+			continue
+		}
+		if !clusterNetworksContainIP(clusterIPNets, pod.Status.PodIP) {
+			return fmt.Errorf("the Linkerd clusterNetworks [%q] do not include pod %s/%s (%s)", hc.linkerdConfig.ClusterNetworks, pod.Namespace, pod.Name, pod.Status.PodIP)
+		}
+	}
+	return nil
+}
+
+func (hc *HealthChecker) checkClusterNetworksContainAllServices(ctx context.Context) error {
+	clusterNetworks := strings.Split(hc.linkerdConfig.ClusterNetworks, ",")
+	clusterIPNets := make([]*net.IPNet, len(clusterNetworks))
+	var err error
+	for i, clusterNetwork := range clusterNetworks {
+		_, clusterIPNets[i], err = net.ParseCIDR(clusterNetwork)
+		if err != nil {
+			return err
+		}
+	}
+	svcs, err := hc.kubeAPI.CoreV1().Services(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, svc := range svcs.Items {
+		clusterIP := svc.Spec.ClusterIP
+		if clusterIP != "" && clusterIP != "None" && !clusterNetworksContainIP(clusterIPNets, svc.Spec.ClusterIP) {
+			return fmt.Errorf("the Linkerd clusterNetworks [%q] do not include svc %s/%s (%s)", hc.linkerdConfig.ClusterNetworks, svc.Namespace, svc.Name, svc.Spec.ClusterIP)
+		}
+	}
+	return nil
+}
+
 func (hc *HealthChecker) expectedRBACNames() []string {
 	return []string{
 		fmt.Sprintf("linkerd-%s-identity", hc.ControlPlaneNamespace),
@@ -2065,7 +2134,7 @@ func (hc *HealthChecker) checkValidatingWebhookConfigurations(ctx context.Contex
 // installed on the cluster.
 func CheckCustomResourceDefinitions(ctx context.Context, k8sAPI *k8s.KubernetesAPI, expectedCRDManifests string) error {
 
-	crdYamls := strings.Split(expectedCRDManifests, "---")
+	crdYamls := strings.Split(expectedCRDManifests, "---\n")
 	crdVersions := []struct{ name, version string }{}
 	for _, crdYaml := range crdYamls {
 		var crd apiextv1.CustomResourceDefinition
@@ -2273,7 +2342,7 @@ func (hc *HealthChecker) checkMisconfiguredOpaquePortAnnotations(ctx context.Con
 	// This is used instead of `hc.kubeAPI` to limit multiple k8s API requests
 	// and use the caching logic in the shared informers
 	// TODO: move the shared informer code out of `controller/`, and into `pkg` to simplify the dependency tree.
-	kubeAPI := controllerK8s.NewAPI(hc.kubeAPI, nil, nil, controllerK8s.Endpoint, controllerK8s.Pod, controllerK8s.Svc)
+	kubeAPI := controllerK8s.NewClusterScopedAPI(hc.kubeAPI, nil, nil, controllerK8s.Endpoint, controllerK8s.Pod, controllerK8s.Svc)
 	kubeAPI.Sync(ctx.Done())
 
 	services, err := kubeAPI.Svc().Lister().Services(hc.DataPlaneNamespace).List(labels.Everything())
@@ -2759,10 +2828,14 @@ func CheckForPods(pods []corev1.Pod, deployNames []string) error {
 	exists := make(map[string]bool)
 
 	for _, pod := range pods {
-		// Strip randomized suffix and take the deployment name
-		parts := strings.Split(pod.Name, "-")
-		deployName := strings.Join(parts[:len(parts)-2], "-")
-		exists[deployName] = true
+		for label, value := range pod.Labels {
+			// When the label value is `linkerd.io/control-plane-component` or
+			// `component`, we'll take its value as the name of the deployment
+			// that the pod is part of
+			if label == k8s.ControllerComponentLabel || label == "component" {
+				exists[value] = true
+			}
+		}
 	}
 
 	for _, expected := range deployNames {
@@ -2790,7 +2863,7 @@ func CheckPodsRunning(pods []corev1.Pod, namespace string) error {
 		// Skip validating pods that have a status which indicates there would
 		// be no running proxy container.
 		switch status {
-		case "Completed", "NodeShutdown", "Shutdown":
+		case "Completed", "NodeShutdown", "Shutdown", "Terminated":
 			continue
 		}
 		if status != string(corev1.PodRunning) && status != "Evicted" {

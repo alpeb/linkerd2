@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,22 +24,22 @@ import (
 
 // TestHelper provides helpers for running the linkerd integration tests.
 type TestHelper struct {
-	linkerd            string
-	version            string
-	namespace          string
-	vizNamespace       string
-	upgradeFromVersion string
-	clusterDomain      string
-	externalIssuer     bool
-	externalPrometheus bool
-	multicluster       bool
-	multiclusterSrcCtx string
-	multiclusterTgtCtx string
-	uninstall          bool
-	cni                bool
-	calico             bool
-	defaultAllowPolicy string
-	httpClient         http.Client
+	linkerd              string
+	version              string
+	namespace            string
+	vizNamespace         string
+	upgradeFromVersion   string
+	clusterDomain        string
+	externalIssuer       bool
+	externalPrometheus   bool
+	multicluster         bool
+	multiclusterSrcCtx   string
+	multiclusterTgtCtx   string
+	uninstall            bool
+	cni                  bool
+	calico               bool
+	defaultInboundPolicy string
+	httpClient           http.Client
 	KubernetesHelper
 	helm
 	installedExtensions []string
@@ -181,7 +180,7 @@ func NewTestHelper() *TestHelper {
 
 	// TODO (matei): clean-up flags
 	k8sContext := flag.String("k8s-context", "", "kubernetes context associated with the test cluster")
-	linkerd := flag.String("linkerd", "", "path to the linkerd binary to test")
+	linkerdExec := flag.String("linkerd", "", "path to the linkerd binary to test")
 	namespace := flag.String("linkerd-namespace", "linkerd", "the namespace where linkerd is installed")
 	vizNamespace := flag.String("viz-namespace", "linkerd-viz", "the namespace where linkerd viz extension is installed")
 	multicluster := flag.Bool("multicluster", false, "when specified the multicluster install functionality is tested")
@@ -205,24 +204,20 @@ func NewTestHelper() *TestHelper {
 	uninstall := flag.Bool("uninstall", false, "whether to run the 'linkerd uninstall' integration test")
 	cni := flag.Bool("cni", false, "whether to install linkerd with CNI enabled")
 	calico := flag.Bool("calico", false, "whether to install calico CNI plugin")
-	defaultAllowPolicy := flag.String("default-allow-policy", "", "if non-empty, passed to --set policyController.defaultAllowPolicy at linkerd's install time")
+	defaultInboundPolicy := flag.String("default-inbound-policy", "", "if non-empty, passed to --set proxy.defaultInboundPolicy at linkerd's install time")
 	flag.Parse()
 
 	if !*runTests {
 		exit(0, "integration tests not enabled: enable with -integration-tests")
 	}
 
-	if *linkerd == "" {
+	if *linkerdExec == "" {
 		exit(1, "-linkerd flag is required")
 	}
 
-	if !filepath.IsAbs(*linkerd) {
-		exit(1, "-linkerd path must be absolute")
-	}
-
-	_, err := os.Stat(*linkerd)
+	linkerd, err := filepath.Abs(*linkerdExec)
 	if err != nil {
-		exit(1, "-linkerd binary does not exist")
+		exit(1, fmt.Sprintf("abs: %s", err))
 	}
 
 	if *verbose {
@@ -232,7 +227,7 @@ func NewTestHelper() *TestHelper {
 	}
 
 	testHelper := &TestHelper{
-		linkerd:            *linkerd,
+		linkerd:            linkerd,
 		namespace:          *namespace,
 		vizNamespace:       *vizNamespace,
 		upgradeFromVersion: *upgradeFromVersion,
@@ -250,13 +245,13 @@ func NewTestHelper() *TestHelper {
 			multiclusterReleaseName: *multiclusterHelmReleaseName,
 			upgradeFromVersion:      *upgradeHelmFromVersion,
 		},
-		clusterDomain:      *clusterDomain,
-		externalIssuer:     *externalIssuer,
-		externalPrometheus: *externalPrometheus,
-		cni:                *cni,
-		calico:             *calico,
-		uninstall:          *uninstall,
-		defaultAllowPolicy: *defaultAllowPolicy,
+		clusterDomain:        *clusterDomain,
+		externalIssuer:       *externalIssuer,
+		externalPrometheus:   *externalPrometheus,
+		cni:                  *cni,
+		calico:               *calico,
+		uninstall:            *uninstall,
+		defaultInboundPolicy: *defaultInboundPolicy,
 	}
 
 	version, err := testHelper.LinkerdRun("version", "--client", "--short")
@@ -379,9 +374,9 @@ func (h *TestHelper) Uninstall() bool {
 	return h.uninstall
 }
 
-// DefaultAllowPolicy returns the override value for policyController.defaultAllowPolicy
-func (h *TestHelper) DefaultAllowPolicy() string {
-	return h.defaultAllowPolicy
+// DefaultInboundPolicy returns the override value for proxy.defaultInboundPolicy
+func (h *TestHelper) DefaultInboundPolicy() string {
+	return h.defaultInboundPolicy
 }
 
 // UpgradeFromVersion returns the base version of the upgrade test.
@@ -660,7 +655,7 @@ func (h *TestHelper) HTTPGetURL(url string) (string, error) {
 		}
 
 		defer resp.Body.Close()
-		bytes, err := ioutil.ReadAll(resp.Body)
+		bytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("Error reading response body: %w", err)
 		}
@@ -732,7 +727,7 @@ func (h *TestHelper) DownloadCLIBinary(filepath, version string) error {
 
 // ReadFile reads a file from disk and returns the contents as a string.
 func ReadFile(file string) (string, error) {
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
 	}

@@ -3,9 +3,10 @@ package issuercerts
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -85,12 +86,12 @@ func FetchExternalIssuerData(ctx context.Context, api kubernetes.Interface, cont
 
 // LoadIssuerCrtAndKeyFromFiles loads the issuer certificate and key from files
 func LoadIssuerCrtAndKeyFromFiles(keyPEMFile, crtPEMFile string) (string, string, error) {
-	key, err := ioutil.ReadFile(filepath.Clean(keyPEMFile))
+	key, err := os.ReadFile(filepath.Clean(keyPEMFile))
 	if err != nil {
 		return "", "", err
 	}
 
-	crt, err := ioutil.ReadFile(filepath.Clean(crtPEMFile))
+	crt, err := os.ReadFile(filepath.Clean(crtPEMFile))
 	if err != nil {
 		return "", "", err
 	}
@@ -105,7 +106,7 @@ func LoadIssuerDataFromFiles(keyPEMFile, crtPEMFile, trustPEMFile string) (*Issu
 		return nil, err
 	}
 
-	anchors, err := ioutil.ReadFile(filepath.Clean(trustPEMFile))
+	anchors, err := os.ReadFile(filepath.Clean(trustPEMFile))
 	if err != nil {
 		return nil, err
 	}
@@ -133,25 +134,71 @@ func CheckExpiringSoon(cert *x509.Certificate) error {
 	return nil
 }
 
-// CheckCertAlgoRequirements ensures the certificate respects with the constraints
-// we have posed on the public key and signature algorithms
-func CheckCertAlgoRequirements(cert *x509.Certificate) error {
+// CheckIssuerCertAlgoRequirements ensures the certificate respects with the constraints
+// we have posed on the public key and signature algorithms. Issuer certificates can only
+// be signed by an ECDSA certificate.
+func CheckIssuerCertAlgoRequirements(cert *x509.Certificate) error {
 	if cert.PublicKeyAlgorithm == x509.ECDSA {
-		// this is a safe cast here as we know we are using ECDSA
-		k, ok := cert.PublicKey.(*ecdsa.PublicKey)
-		if !ok {
-			return fmt.Errorf("expected ecdsa.PublicKey but got something %v", cert.PublicKey)
-		}
-		if k.Params().BitSize != 256 {
-			return fmt.Errorf("must use P-256 curve for public key, instead P-%d was used", k.Params().BitSize)
+		err := checkECDSACertRequirements(cert)
+		if err != nil {
+			return err
 		}
 	} else {
-		return fmt.Errorf("must use ECDSA for public key algorithm, instead %s was used", cert.PublicKeyAlgorithm)
+		return fmt.Errorf("issuer certificate must use ECDSA for public key algorithm, instead %s was used", cert.PublicKeyAlgorithm)
 	}
 
-	if cert.SignatureAlgorithm != x509.ECDSAWithSHA256 {
+	return nil
+}
+
+// CheckTrustAnchorAlgoRequirements ensures the certificate respects with the constraints
+// we have posed on the public key and signature algorithms. Trust anchors can be signed by
+// an ECDSA or RSA certificate.
+func CheckTrustAnchorAlgoRequirements(cert *x509.Certificate) error {
+	if cert.PublicKeyAlgorithm == x509.ECDSA {
+		err := checkECDSACertRequirements(cert)
+		if err != nil {
+			return err
+		}
+	} else if cert.PublicKeyAlgorithm == x509.RSA {
+		err := checkRSACertRequirements(cert)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("trust anchor must use ECDSA or RSA for public key algorithm, instead %s was used", cert.PublicKeyAlgorithm)
+	}
+
+	return nil
+}
+
+func checkECDSACertRequirements(cert *x509.Certificate) error {
+	k, ok := cert.PublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("expected ecdsa.PublicKey but got something %v", cert.PublicKey)
+	}
+	if k.Params().BitSize != 256 {
+		return fmt.Errorf("must use P-256 curve for public key, instead P-%d was used", k.Params().BitSize)
+	}
+	if cert.SignatureAlgorithm != x509.ECDSAWithSHA256 &&
+		cert.SignatureAlgorithm != x509.SHA256WithRSA {
 		return fmt.Errorf("must be signed by an ECDSA P-256 key, instead %s was used", cert.SignatureAlgorithm)
 	}
+
+	return nil
+}
+
+func checkRSACertRequirements(cert *x509.Certificate) error {
+	k, ok := cert.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("expected rsa.PublicKey but got something %v", cert.PublicKey)
+	}
+	if k.N.BitLen() != 2048 && k.N.BitLen() != 4096 {
+		return fmt.Errorf("RSA must use at least 2084 bit public key, instead %d bit public key was used", k.N.BitLen())
+	}
+	if cert.SignatureAlgorithm != x509.SHA256WithRSA {
+		return fmt.Errorf("must be signed by an RSA 2048/4096 bit key, instead %s was used", cert.SignatureAlgorithm)
+	}
+
 	return nil
 }
 
@@ -168,7 +215,7 @@ func (ic *IssuerCertData) VerifyAndBuildCreds() (*tls.Cred, error) {
 	}
 
 	// we check the algo requirements of the issuer cert
-	if err := CheckCertAlgoRequirements(creds.Certificate); err != nil {
+	if err := CheckIssuerCertAlgoRequirements(creds.Certificate); err != nil {
 		return nil, err
 	}
 

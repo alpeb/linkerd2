@@ -3,17 +3,18 @@
 ###
 ### Heartbeat
 ###
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: linkerd-heartbeat
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: heartbeat
     app.kubernetes.io/part-of: Linkerd
     app.kubernetes.io/version: {{.Values.linkerdVersion}}
     linkerd.io/control-plane-component: heartbeat
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 spec:
@@ -39,6 +40,9 @@ spec:
           {{- if .Values.priorityClassName }}
           priorityClassName: {{ .Values.priorityClassName }}
           {{- end -}}
+          {{- with .Values.runtimeClassName }}
+          runtimeClassName: {{ . | quote }}
+          {{- end }}
           {{- if .Values.tolerations -}}
           {{- include "linkerd.tolerations" . | nindent 10 }}
           {{- end -}}

@@ -4,7 +4,7 @@
 pub mod admission;
 pub mod curl;
 pub mod grpc;
-pub mod nginx;
+pub mod web;
 
 use linkerd_policy_controller_k8s_api::{self as k8s, ResourceExt};
 use maplit::{btreemap, convert_args};
@@ -17,19 +17,39 @@ pub enum LinkerdInject {
     Disabled,
 }
 
-pub async fn create<T>(client: &kube::Client, obj: T) -> T
+/// Creates a cluster-scoped resource.
+async fn create_cluster_scoped<T>(client: &kube::Client, obj: T) -> T
 where
-    T: kube::Resource + serde::Serialize + serde::de::DeserializeOwned + Clone + std::fmt::Debug,
+    T: kube::Resource<Scope = kube::core::ClusterResourceScope>,
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone + std::fmt::Debug,
     T::DynamicType: Default,
 {
     let params = kube::api::PostParams {
         field_manager: Some("linkerd-policy-test".to_string()),
         ..Default::default()
     };
-    let api = match obj.namespace() {
-        Some(ns) => kube::Api::<T>::namespaced(client.clone(), &ns),
-        None => kube::Api::<T>::all(client.clone()),
+    let api = kube::Api::<T>::all(client.clone());
+    tracing::trace!(?obj, "Creating");
+    api.create(&params, &obj)
+        .await
+        .expect("failed to create resource")
+}
+
+/// Creates a namespace-scoped resource.
+pub async fn create<T>(client: &kube::Client, obj: T) -> T
+where
+    T: kube::Resource<Scope = kube::core::NamespaceResourceScope>,
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone + std::fmt::Debug,
+    T::DynamicType: Default,
+{
+    let params = kube::api::PostParams {
+        field_manager: Some("linkerd-policy-test".to_string()),
+        ..Default::default()
     };
+    let api = obj
+        .namespace()
+        .map(|ns| kube::Api::<T>::namespaced(client.clone(), &*ns))
+        .unwrap_or_else(|| kube::Api::<T>::default_namespaced(client.clone()));
     tracing::trace!(?obj, "Creating");
     api.create(&params, &obj)
         .await
@@ -43,8 +63,8 @@ pub async fn await_condition<T>(
     cond: impl kube::runtime::wait::Condition<T>,
 ) -> Option<T>
 where
-    T: kube::Resource + serde::Serialize + serde::de::DeserializeOwned,
-    T: Clone + std::fmt::Debug + Send + 'static,
+    T: kube::Resource<Scope = kube::core::NamespaceResourceScope>,
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone + std::fmt::Debug + Send + 'static,
     T::DynamicType: Default,
 {
     let api = kube::Api::namespaced(client.clone(), ns);
@@ -71,7 +91,27 @@ pub async fn create_ready_pod(client: &kube::Client, pod: k8s::Pod) -> k8s::Pod 
     };
 
     let pod = create(client, pod).await;
-    await_condition(client, &pod.namespace().unwrap(), &pod.name(), pod_ready).await;
+    let pod = await_condition(
+        client,
+        &pod.namespace().unwrap(),
+        &pod.name_unchecked(),
+        pod_ready,
+    )
+    .await
+    .unwrap();
+
+    tracing::trace!(
+        pod = %pod.name_any(),
+        ip = %pod
+            .status.as_ref().expect("pod must have a status")
+            .pod_ips.as_ref().unwrap()[0]
+            .ip.as_deref().expect("pod ip must be set"),
+        containers = ?pod
+            .spec.as_ref().expect("pod must have a spec")
+            .containers.iter().map(|c| &*c.name).collect::<Vec<_>>(),
+        "Ready",
+    );
+
     pod
 }
 
@@ -94,6 +134,21 @@ pub async fn await_pod_ip(client: &kube::Client, ns: &str, name: &str) -> std::n
         .expect("pod IP must be valid")
 }
 
+#[tracing::instrument(skip_all, fields(%pod, %container))]
+pub async fn logs(client: &kube::Client, ns: &str, pod: &str, container: &str) {
+    let params = kube::api::LogParams {
+        container: Some(container.to_string()),
+        ..kube::api::LogParams::default()
+    };
+    let log = kube::Api::<k8s::Pod>::namespaced(client.clone(), ns)
+        .logs(pod, &params)
+        .await
+        .expect("must fetch logs");
+    for message in log.lines() {
+        tracing::trace!(%message);
+    }
+}
+
 /// Runs a test with a random namespace that is deleted on test completion
 pub async fn with_temp_ns<F, Fut>(test: F)
 where
@@ -102,15 +157,31 @@ where
 {
     let _tracing = init_tracing();
 
-    tracing::trace!("Initializing client");
-    let client = kube::Client::try_default()
-        .await
-        .expect("failed to initialize k8s client");
+    let context = std::env::var("POLICY_TEST_CONTEXT").ok();
+    tracing::trace!(?context, "Initializing client");
+    let client = match context {
+        None => kube::Client::try_default()
+            .await
+            .expect("must initialize kubernetes client"),
+        Some(context) => {
+            let opts = kube::config::KubeConfigOptions {
+                context: Some(context),
+                cluster: None,
+                user: None,
+            };
+            kube::Config::from_kubeconfig(&opts)
+                .await
+                .expect("must initialize kubernetes client config")
+                .try_into()
+                .expect("must initialize kubernetes client")
+        }
+    };
+
     let api = kube::Api::<k8s::Namespace>::all(client.clone());
 
     let name = format!("linkerd-policy-test-{}", random_suffix(6));
     tracing::debug!(namespace = %name, "Creating");
-    let ns = create(
+    let ns = create_cluster_scoped(
         &client,
         k8s::Namespace {
             metadata: k8s::ObjectMeta {
@@ -127,24 +198,25 @@ where
     tracing::trace!(?ns);
     tokio::time::timeout(
         tokio::time::Duration::from_secs(60),
-        await_service_account(&client, &ns.name(), "default"),
+        await_service_account(&client, &ns.name_unchecked(), "default"),
     )
     .await
     .expect("Timed out waiting for a serviceaccount");
 
     tracing::trace!("Spawning");
-    let test = test(client.clone(), ns.name());
-    let res = tokio::spawn(test.instrument(tracing::info_span!("test", ns = %ns.name()))).await;
+    let ns_name = ns.name_unchecked();
+    let test = test(client.clone(), ns_name.clone());
+    let res = tokio::spawn(test.instrument(tracing::info_span!("test", ns = %ns_name))).await;
     if res.is_err() {
         // If the test failed, list the state of all pods/containers in the namespace.
-        let pods = kube::Api::<k8s::Pod>::namespaced(client.clone(), &ns.name())
+        let pods = kube::Api::<k8s::Pod>::namespaced(client.clone(), &ns_name)
             .list(&Default::default())
             .await
             .expect("Failed to get pod status");
         for p in pods.items {
-            let pod = p.name();
+            let pod = p.name_unchecked();
             if let Some(status) = p.status {
-                let _span = tracing::info_span!("pod", ns = %ns.name(), name = %pod).entered();
+                let _span = tracing::info_span!("pod", ns = %ns_name, name = %pod).entered();
                 tracing::trace!(reason = ?status.reason, message = ?status.message);
                 for c in status.init_container_statuses.into_iter().flatten() {
                     tracing::trace!(init_container = %c.name, ready = %c.ready, state = ?c.state);
@@ -160,48 +232,25 @@ where
         drop(_tracing);
     }
 
-    tracing::debug!(ns = %ns.name(), "Deleting");
-    api.delete(&ns.name(), &kube::api::DeleteParams::background())
-        .await
-        .expect("failed to delete Namespace");
+    if std::env::var("POLICY_TEST_NO_CLEANUP").is_err() {
+        tracing::debug!(ns = %ns.name_unchecked(), "Deleting");
+        api.delete(&ns.name_unchecked(), &kube::api::DeleteParams::background())
+            .await
+            .expect("failed to delete Namespace");
+    }
     if let Err(err) = res {
         std::panic::resume_unwind(err.into_panic());
     }
 }
 
-pub async fn await_service_account(client: &kube::Client, ns: &str, name: &str) {
-    use futures::StreamExt;
-    let secret_name = await_service_account_secret(client, ns, name).await;
-
-    tracing::trace!(name = %secret_name, "Waiting for secret");
-    tokio::pin! {
-        let secrets = kube::runtime::watcher(
-            kube::Api::<k8s::api::core::v1::Secret>::namespaced(client.clone(), ns),
-            kube::api::ListParams::default().fields(&format!("metadata.name={}", secret_name)),
-        );
-    }
-    loop {
-        match secrets
-            .next()
-            .await
-            .expect("secret watch must not end")
-            .expect("secret watch must not fail")
-        {
-            kube::runtime::watcher::Event::Restarted(secrets) if !secrets.is_empty() => break,
-            kube::runtime::watcher::Event::Applied(_) => break,
-            _ => {}
-        }
-    }
-}
-
-async fn await_service_account_secret(client: &kube::Client, ns: &str, name: &str) -> String {
+async fn await_service_account(client: &kube::Client, ns: &str, name: &str) {
     use futures::StreamExt;
 
-    tracing::trace!(%name, "Waiting for serviceaccount");
+    tracing::trace!(%name, %ns, "Waiting for serviceaccount");
     tokio::pin! {
         let sas = kube::runtime::watcher(
             kube::Api::<k8s::ServiceAccount>::namespaced(client.clone(), ns),
-            kube::api::ListParams::default().fields(&format!("metadata.name={}", name)),
+            kube::api::ListParams::default(),
         );
     }
     loop {
@@ -213,24 +262,22 @@ async fn await_service_account_secret(client: &kube::Client, ns: &str, name: &st
         tracing::info!(?ev);
         match ev {
             kube::runtime::watcher::Event::Restarted(sas) => {
-                if let Some(sa) = sas.get(0) {
-                    if let Some(sec) = sa.secrets.iter().flatten().next() {
-                        if let Some(name) = sec.name.as_ref() {
-                            return name.clone();
-                        }
-                    }
+                if sas.iter().any(|sa| sa.name_unchecked() == name) {
+                    return;
                 }
             }
             kube::runtime::watcher::Event::Applied(sa) => {
-                if let Some(sec) = sa.secrets.iter().flatten().next() {
-                    if let Some(name) = sec.name.as_ref() {
-                        return name.clone();
-                    }
+                if sa.name_unchecked() == name {
+                    return;
                 }
             }
             _ => {}
         }
     }
+
+    // XXX In some versions of k8s, it may be appropriate to wait for the
+    // ServiceAccount's secret to be created, but, as of v1.24,
+    // ServiceAccounts don't have secrets.
 }
 
 pub fn random_suffix(len: usize) -> String {
@@ -247,9 +294,14 @@ fn init_tracing() -> tracing::subscriber::DefaultGuard {
     tracing::subscriber::set_default(
         tracing_subscriber::fmt()
             .with_test_writer()
+            .with_thread_names(true)
+            .without_time()
             .with_env_filter(
-                tracing_subscriber::EnvFilter::try_from_default_env()
-                    .unwrap_or_else(|_| "trace,hyper=info,kube=info,h2=info".parse().unwrap()),
+                tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                    "trace,tower=info,hyper=info,kube=info,h2=info"
+                        .parse()
+                        .unwrap()
+                }),
             )
             .finish(),
     )

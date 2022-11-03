@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/linkerd/linkerd2-proxy-init/ports"
 	"github.com/linkerd/linkerd2/controller/k8s"
 	labels "github.com/linkerd/linkerd2/pkg/k8s"
 	"github.com/linkerd/linkerd2/pkg/util"
@@ -106,9 +105,6 @@ func (opw *OpaquePortsWatcher) addService(obj interface{}) {
 	opw.Lock()
 	defer opw.Unlock()
 	svc := obj.(*corev1.Service)
-	if svc.Namespace == kubeSystem {
-		return
-	}
 	id := ServiceID{
 		Namespace: svc.Namespace,
 		Name:      svc.Name,
@@ -160,9 +156,6 @@ func (opw *OpaquePortsWatcher) deleteService(obj interface{}) {
 			return
 		}
 	}
-	if service.Namespace == kubeSystem {
-		return
-	}
 	id := ServiceID{
 		Namespace: service.Namespace,
 		Name:      service.Name,
@@ -208,7 +201,7 @@ func parseServiceOpaquePorts(annotation string, sps []corev1.ServicePort) []stri
 		if named {
 			values = append(values, strconv.Itoa(int(port)))
 		} else {
-			pr, err := ports.ParsePortRange(pr)
+			pr, err := util.ParsePortRange(pr)
 			if err != nil {
 				logging.Warnf("Invalid port range [%v]: %s", pr, err)
 				continue

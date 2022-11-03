@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -630,10 +629,10 @@ func TestWalk(t *testing.T) {
 		file1 = filepath.Join(tmpFolderRoot, "root.txt")
 		file2 = filepath.Join(tmpFolderData, "data.txt")
 	)
-	if err := ioutil.WriteFile(file1, data, 0600); err != nil {
+	if err := os.WriteFile(file1, data, 0600); err != nil {
 		t.Fatal("Unexpected error: ", err)
 	}
-	if err := ioutil.WriteFile(file2, data, 0600); err != nil {
+	if err := os.WriteFile(file2, data, 0600); err != nil {
 		t.Fatal("Unexpected error: ", err)
 	}
 
@@ -678,6 +677,7 @@ func TestProxyConfigurationAnnotations(t *testing.T) {
 	values.Proxy.WaitBeforeExitSeconds = 10
 	values.Proxy.Await = false
 	values.Proxy.AccessLog = "apache"
+	values.Proxy.ShutdownGracePeriod = "60s"
 
 	expectedOverrides := map[string]string{
 		k8s.ProxyIgnoreInboundPortsAnnotation:  "8500-8505",
@@ -698,6 +698,7 @@ func TestProxyConfigurationAnnotations(t *testing.T) {
 		k8s.ProxyWaitBeforeExitSecondsAnnotation:  "10",
 		k8s.ProxyAwait:                            "disabled",
 		k8s.ProxyAccessLogAnnotation:              "apache",
+		k8s.ProxyShutdownGracePeriodAnnotation:    "60s",
 	}
 
 	overrides := getOverrideAnnotations(values, baseValues)

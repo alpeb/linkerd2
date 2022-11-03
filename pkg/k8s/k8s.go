@@ -27,6 +27,8 @@ const (
 	Node                  = "node"
 	Server                = "server"
 	ServerAuthorization   = "serverauthorization"
+	AuthorizationPolicy   = "authorizationpolicy"
+	HTTPRoute             = "httproute"
 
 	PolicyAPIGroup   = "policy.linkerd.io"
 	PolicyAPIVersion = "v1beta1"
@@ -38,6 +40,12 @@ const (
 	LinkAPIVersion      = "v1alpha1"
 	LinkAPIGroupVersion = "multicluster.linkerd.io/v1alpha1"
 	LinkKind            = "Link"
+
+	K8sCoreAPIGroup = "core"
+
+	NamespaceKind = "Namespace"
+	ServerKind    = "Server"
+	HTTPRouteKind = "HTTPRoute"
 
 	// special case k8s job label, to not conflict with Prometheus' job label
 	l5dJob = "k8s_job"
@@ -52,18 +60,20 @@ type resourceName struct {
 // AllResources is a sorted list of all resources defined as constants above.
 var AllResources = []string{
 	Authority,
+	AuthorizationPolicy,
 	CronJob,
 	DaemonSet,
 	Deployment,
+	HTTPRoute,
 	Job,
 	Namespace,
 	Pod,
-	ReplicationController,
 	ReplicaSet,
-	Service,
-	ServiceProfile,
+	ReplicationController,
 	Server,
 	ServerAuthorization,
+	Service,
+	ServiceProfile,
 	StatefulSet,
 }
 
@@ -110,6 +120,8 @@ var resourceNames = []resourceName{
 	{"sp", "serviceprofile", "serviceprofiles"},
 	{"saz", "serverauthorization", "serverauthorizations"},
 	{"srv", "server", "servers"},
+	{"ap", "authorizationpolicy", "authorizationpolicies"},
+	{"route", "httproute", "httproutes"},
 	{"sts", "statefulset", "statefulsets"},
 	{"ln", "link", "links"},
 	{"all", "all", "all"},

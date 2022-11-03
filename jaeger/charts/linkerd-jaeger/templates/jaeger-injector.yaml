@@ -11,8 +11,9 @@ metadata:
     app.kubernetes.io/part-of: Linkerd
     app.kubernetes.io/version: {{default .Values.webhook.image.version .Values.cliVersion}}
     component: jaeger-injector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: jaeger-injector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -25,9 +26,11 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/rbac.yaml") . | sha256sum }}
         linkerd.io/inject: enabled
         config.linkerd.io/proxy-await: "enabled"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: jaeger
         component: jaeger-injector
+        {{- with .Values.podLabels }}{{ toYaml . | trim | nindent 8 }}{{- end }}
     spec:
       {{- if .Values.webhook.tolerations -}}
       {{- include "linkerd.tolerations" (dict "Values" .Values.webhook) | nindent 6 }}
@@ -59,6 +62,8 @@ spec:
           httpGet:
             path: /ready
             port: 9995
+        securityContext:
+          runAsUser: {{.Values.webhook.UID | default .Values.defaultUID}}
         volumeMounts:
         - mountPath: /var/run/linkerd/tls
           name: tls
@@ -76,10 +81,11 @@ kind: Service
 apiVersion: v1
 metadata:
   name: jaeger-injector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: jaeger
     component: jaeger-injector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 spec:
   type: ClusterIP
   selector:

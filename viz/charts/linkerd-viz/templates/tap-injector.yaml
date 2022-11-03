@@ -6,10 +6,11 @@ kind: Service
 apiVersion: v1
 metadata:
   name: tap-injector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
     component: tap-injector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
     linkerd.io/inject: enabled
@@ -36,8 +37,9 @@ metadata:
     app.kubernetes.io/name: tap-injector
     app.kubernetes.io/part-of: Linkerd
     component: tap-injector
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: tap-injector
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{.Values.tapInjector.replicas}}
   selector:
@@ -60,6 +62,7 @@ spec:
         {{- end }}
         {{- with .Values.podAnnotations }}{{ toYaml . | trim | nindent 8 }}{{- end }}
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: tap-injector
@@ -101,6 +104,7 @@ spec:
         {{- include "partials.resources" .Values.tapInjector.resources | nindent 8 }}
         {{- end }}
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: {{.Values.tapInjector.UID | default .Values.defaultUID}}
         volumeMounts:
         - mountPath: /var/run/linkerd/tls

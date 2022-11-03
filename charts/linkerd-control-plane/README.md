@@ -3,7 +3,7 @@
 Linkerd gives you observability, reliability, and security
 for your microservices — with no code change required.
 
-![Version: 1.4.2-edge](https://img.shields.io/badge/Version-1.4.2--edge-informational?style=flat-square)
+![Version: 1.10.2-edge](https://img.shields.io/badge/Version-1.10.2--edge-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 ![AppVersion: edge-XX.X.X](https://img.shields.io/badge/AppVersion-edge--XX.X.X-informational?style=flat-square)
 
@@ -11,7 +11,7 @@ for your microservices — with no code change required.
 
 ## Quickstart and documentation
 
-You can run Linkerd on any Kubernetes 1.20+ cluster in a matter of seconds. See
+You can run Linkerd on any Kubernetes 1.21+ cluster in a matter of seconds. See
 the [Linkerd Getting Started Guide][getting-started] for how.
 
 For more comprehensive documentation, start with the [Linkerd
@@ -97,7 +97,6 @@ helm install linkerd-control-plane -n linkerd \
 * Follow [@linkerd][twitter] on Twitter.
 * Join the [Linkerd Slack][slack].
 
-[cncf]: https://www.cncf.io/
 [getting-started]: https://linkerd.io/2/getting-started/
 [linkerd2]: https://github.com/linkerd/linkerd2
 [linkerd-announce]: https://lists.cncf.io/g/cncf-linkerd-announce
@@ -123,7 +122,7 @@ extensions:
 
 ## Requirements
 
-Kubernetes: `>=1.20.0-0`
+Kubernetes: `>=1.21.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
@@ -134,8 +133,9 @@ Kubernetes: `>=1.20.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | clusterDomain | string | `"cluster.local"` | Kubernetes DNS Domain name to use |
-| clusterNetworks | string | `"10.0.0.0/8,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16"` | The cluster networks for which service discovery is performed. This should include the pod and service networks, but need not include the node network. By default, all private networks are specified so that resolution works in typical Kubernetes environments. |
+| clusterNetworks | string | `"10.0.0.0/8,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16"` | The cluster networks for which service discovery is performed. This should include the pod and service networks, but need not include the node network.  By default, all private networks are specified so that resolution works in typical Kubernetes environments. |
 | cniEnabled | bool | `false` | enabling this omits the NET_ADMIN capability in the PSP and the proxy-init container when injecting the proxy; requires the linkerd-cni plugin to already be installed |
+| commonLabels | object | `{}` | Labels to apply to all resources |
 | controlPlaneTracing | bool | `false` | enables control plane tracing |
 | controlPlaneTracingNamespace | string | `"linkerd-jaeger"` | namespace to send control plane traces to |
 | controllerImage | string | `"cr.l5d.io/linkerd/controller"` | Docker image for the destination and identity components |
@@ -167,14 +167,26 @@ Kubernetes: `>=1.20.0-0`
 | imagePullPolicy | string | `"IfNotPresent"` | Docker image pull policy |
 | imagePullSecrets | list | `[]` | For Private docker registries, authentication is needed.  Registry secrets are applied to the respective service accounts |
 | linkerdVersion | string | `"linkerdVersionValue"` | control plane version. See Proxy section for proxy version |
+| networkValidator.connectAddr | string | `"1.1.1.1:20001"` | Address to which the network-validator will attempt to connect. we expect this to be rewritten |
+| networkValidator.listenAddr | string | `"0.0.0.0:4140"` | Address to which network-validator listens to requests from itself |
+| networkValidator.logFormat | string | plain | Log format (`plain` or `json`) for network-validator |
+| networkValidator.logLevel | string | debug | Log level for the network-validator |
+| networkValidator.timeout | string | `"10s"` | Timeout before network-validator fails to validate the pod's network connectivity |
 | nodeSelector | object | `{"kubernetes.io/os":"linux"}` | NodeSelector section, See the [K8S documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) for more information |
 | podAnnotations | object | `{}` | Additional annotations to add to all pods |
 | podLabels | object | `{}` | Additional labels to add to all pods |
-| policyController.defaultAllowPolicy | string | "all-unauthenticated" | The default allow policy to use when no `Server` selects a pod.  One of: "all-authenticated", "all-unauthenticated", "cluster-authenticated", "cluster-unauthenticated", "deny" |
-| policyController.image.name | string | `"cr.l5d.io/linkerd/policy-controller"` | Docker image for the proxy |
+| podMonitor.controller.enabled | bool | `true` | Enables the creation of PodMonitor for the control-plane |
+| podMonitor.controller.namespaceSelector | string | `"matchNames:\n  - {{ .Release.Namespace }}\n  - linkerd-viz\n  - linkerd-jaeger\n"` | Selector to select which namespaces the Endpoints objects are discovered from |
+| podMonitor.enabled | bool | `false` | Enables the creation of Prometheus Operator [PodMonitor](https://prometheus-operator.dev/docs/operator/api/#monitoring.coreos.com/v1.PodMonitor) |
+| podMonitor.proxy.enabled | bool | `true` | Enables the creation of PodMonitor for the data-plane |
+| podMonitor.scrapeInterval | string | `"10s"` | Interval at which metrics should be scraped |
+| podMonitor.scrapeTimeout | string | `"10s"` | Iimeout after which the scrape is ended |
+| podMonitor.serviceMirror.enabled | bool | `true` | Enables the creation of PodMonitor for the Service Mirror component |
+| policyController.image.name | string | `"cr.l5d.io/linkerd/policy-controller"` | Docker image for the policy controller |
 | policyController.image.pullPolicy | string | imagePullPolicy | Pull policy for the proxy container Docker image |
 | policyController.image.version | string | linkerdVersion | Tag for the proxy container Docker image |
-| policyController.logLevel | string | `"linkerd=info,warn"` | Log level for the policy controller |
+| policyController.logLevel | string | `"info"` | Log level for the policy controller |
+| policyController.probeNetworks | list | `["0.0.0.0/0"]` | The networks from which probes are performed.  By default, all networks are allowed so that all probes are authorized. |
 | policyController.resources | object | destinationResources | policy controller resource requests & limits |
 | policyController.resources.cpu.limit | string | `""` | Maximum amount of CPU units that the policy controller can use |
 | policyController.resources.cpu.request | string | `""` | Amount of CPU units that the policy controller requests |
@@ -199,6 +211,7 @@ Kubernetes: `>=1.20.0-0`
 | profileValidator.namespaceSelector | object | `{"matchExpressions":[{"key":"config.linkerd.io/admission-webhooks","operator":"NotIn","values":["disabled"]}]}` | Namespace selector used by admission webhook |
 | proxy.await | bool | `true` | If set, the application container will not start until the proxy is ready |
 | proxy.cores | int | `0` | The `cpu.limit` and `cores` should be kept in sync. The value of `cores` must be an integer and should typically be set by rounding up from the limit. E.g. if cpu.limit is '1500m', cores should be 2. |
+| proxy.defaultInboundPolicy | string | "all-unauthenticated" | The default allow policy to use when no `Server` selects a pod.  One of: "all-authenticated", "all-unauthenticated", "cluster-authenticated", "cluster-unauthenticated", "deny" |
 | proxy.enableExternalProfiles | bool | `false` | Enable service profiles for non-Kubernetes services |
 | proxy.image.name | string | `"cr.l5d.io/linkerd/proxy"` | Docker image for the proxy |
 | proxy.image.pullPolicy | string | imagePullPolicy | Pull policy for the proxy container Docker image |
@@ -219,6 +232,7 @@ Kubernetes: `>=1.20.0-0`
 | proxy.resources.ephemeral-storage.request | string | `""` | Amount of ephemeral storage that the proxy requests |
 | proxy.resources.memory.limit | string | `""` | Maximum amount of memory that the proxy can use |
 | proxy.resources.memory.request | string | `""` | Maximum amount of memory that the proxy requests |
+| proxy.shutdownGracePeriod | string | `""` | Grace period for graceful proxy shutdowns. If this timeout elapses before all open connections have completed, the proxy will terminate forcefully, closing any remaining connections. |
 | proxy.uid | int | `2102` | User id under which the proxy runs |
 | proxy.waitBeforeExitSeconds | int | `0` | If set the proxy sidecar will stay alive for at least the given period before receiving SIGTERM signal from Kubernetes but no longer than pod's `terminationGracePeriodSeconds`. See [Lifecycle hooks](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks) for more info on container lifecycle hooks. |
 | proxyInit.closeWaitTimeoutSecs | int | `0` |  |
@@ -226,7 +240,8 @@ Kubernetes: `>=1.20.0-0`
 | proxyInit.ignoreOutboundPorts | string | `"4567,4568"` | Default set of outbound ports to skip via iptables - Galera (4567,4568) |
 | proxyInit.image.name | string | `"cr.l5d.io/linkerd/proxy-init"` | Docker image for the proxy-init container |
 | proxyInit.image.pullPolicy | string | imagePullPolicy | Pull policy for the proxy-init container Docker image |
-| proxyInit.image.version | string | `"v1.5.3"` | Tag for the proxy-init container Docker image |
+| proxyInit.image.version | string | `"v2.0.0"` | Tag for the proxy-init container Docker image |
+| proxyInit.iptablesMode | string | `"legacy"` | Variant of iptables that will be used to configure routing. Currently, proxy-init can be run either in 'nft' or in 'legacy' mode. The mode will control which utility binary will be called. The host must support whichever mode will be used |
 | proxyInit.logFormat | string | plain | Log format (`plain` or `json`) for the proxy-init |
 | proxyInit.logLevel | string | info | Log level for the proxy-init |
 | proxyInit.resources.cpu.limit | string | `"100m"` | Maximum amount of CPU units that the proxy-init container can use |
@@ -236,6 +251,7 @@ Kubernetes: `>=1.20.0-0`
 | proxyInit.resources.memory.limit | string | `"20Mi"` | Maximum amount of memory that the proxy-init container can use |
 | proxyInit.resources.memory.request | string | `"20Mi"` | Amount of memory that the proxy-init container requests |
 | proxyInit.runAsRoot | bool | `false` | Allow overriding the runAsNonRoot behaviour (<https://github.com/linkerd/linkerd2/issues/7308>) |
+| proxyInit.runAsUser | int | `65534` | This value is used only if runAsRoot is false; otherwise runAsUser will be 0 |
 | proxyInit.skipSubnets | string | `""` | Comma-separated list of subnets in valid CIDR format that should be skipped by the proxy |
 | proxyInit.xtMountPath.mountPath | string | `"/run"` |  |
 | proxyInit.xtMountPath.name | string | `"linkerd-proxy-init-xtables-lock"` |  |
@@ -247,7 +263,8 @@ Kubernetes: `>=1.20.0-0`
 | proxyInjector.keyPEM | string | `""` | Certificate key for the proxy injector. If not provided and not using an external secret then Helm will generate one. |
 | proxyInjector.namespaceSelector | object | `{"matchExpressions":[{"key":"config.linkerd.io/admission-webhooks","operator":"NotIn","values":["disabled"]},{"key":"kubernetes.io/metadata.name","operator":"NotIn","values":["kube-system","cert-manager"]}]}` | Namespace selector used by admission webhook. |
 | proxyInjector.objectSelector | object | `{"matchExpressions":[{"key":"linkerd.io/control-plane-component","operator":"DoesNotExist"},{"key":"linkerd.io/cni-resource","operator":"DoesNotExist"}]}` | Object selector used by admission webhook. |
+| runtimeClassName | string | `""` | Runtime Class Name for all the pods |
 | webhookFailurePolicy | string | `"Ignore"` | Failure policy for the proxy injector |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.4.0](https://github.com/norwoodj/helm-docs/releases/v1.4.0)
+Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

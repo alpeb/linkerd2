@@ -112,6 +112,10 @@ const (
 	// disable injection for a pod or namespace.
 	ProxyInjectDisabled = Disabled
 
+	// ProxyTrustRootSHA indicates the cert bundle configured on the injected
+	// workload.
+	ProxyTrustRootSHA = Prefix + "/trust-root-sha256"
+
 	/*
 	 * Proxy config annotations
 	 */
@@ -270,6 +274,10 @@ const (
 
 	// Deny denies all connections.
 	Deny = "deny"
+
+	// ProxyShutdownGracePeriodAnnotation configures the grace period for
+	// graceful shutdowns in the proxy.
+	ProxyShutdownGracePeriodAnnotation = ProxyConfigAnnotationsPrefix + "/shutdown-grace-period"
 
 	/*
 	 * Component Names

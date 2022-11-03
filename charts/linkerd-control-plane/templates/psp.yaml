@@ -9,6 +9,7 @@ metadata:
   name: linkerd-{{.Release.Namespace}}-control-plane
   labels:
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 spec:
   {{- if or .Values.proxyInit.closeWaitTimeoutSecs .Values.proxyInit.runAsRoot }}
   allowPrivilegeEscalation: true
@@ -66,9 +67,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: linkerd-psp
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
 - apiGroups: ['policy', 'extensions']
   resources: ['podsecuritypolicies']
@@ -80,9 +82,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: linkerd-psp
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 roleRef:
   kind: Role
   name: linkerd-psp

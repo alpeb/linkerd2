@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -199,7 +198,15 @@ func TestUpgradeOverwriteIssuer(t *testing.T) {
 				if pathMatch(diff.path, []string{"spec", "template", "spec", "containers", "*", "env", "*", "value"}) && diff.b.(string) == issuerCerts.ca {
 					continue
 				}
+				if pathMatch(diff.path, []string{"spec", "template", "metadata", "annotations", "linkerd.io/trust-root-sha256"}) {
+					continue
+				}
 				t.Errorf("Unexpected diff in %s:\n%s", id, diff.String())
+			}
+			if id == "Deployment/linkerd-destination" {
+				if pathMatch(diff.path, []string{"spec", "template", "metadata", "annotations", "linkerd.io/trust-root-sha256"}) {
+					continue
+				}
 			}
 
 			if id == "Secret/linkerd-identity-issuer" {
@@ -234,6 +241,7 @@ func TestUpgradeOverwriteIssuer(t *testing.T) {
 				}
 				continue
 			}
+
 			t.Errorf("Unexpected diff in %s:\n%s", id, diff.String())
 		}
 	}
@@ -453,15 +461,15 @@ func generateCerts(t *testing.T, name string, b64encode bool) issuerCerts {
 	keyPem := strings.TrimSpace(issuer.Cred.EncodePrivateKeyPEM())
 	crtPem := strings.TrimSpace(issuer.Cred.EncodeCertificatePEM())
 
-	caFile, err := ioutil.TempFile("", "ca.*.pem")
+	caFile, err := os.CreateTemp("", "ca.*.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
-	crtFile, err := ioutil.TempFile("", "crt.*.pem")
+	crtFile, err := os.CreateTemp("", "crt.*.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
-	keyFile, err := ioutil.TempFile("", "key.*.pem")
+	keyFile, err := os.CreateTemp("", "key.*.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -566,7 +574,7 @@ func pathMatch(path []string, template []string) bool {
 
 func renderInstall(t *testing.T, values *linkerd2.Values) *bytes.Buffer {
 	var buf bytes.Buffer
-	if err := renderCRDs(&buf); err != nil {
+	if err := renderCRDs(&buf, valuespkg.Options{}); err != nil {
 		t.Fatalf("could not render install manifests: %s", err)
 	}
 	buf.WriteString("---\n")
@@ -581,7 +589,7 @@ func renderUpgrade(installManifest string, upgradeOpts []flag.Flag, templateOpts
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize fake API: %w\n\n%s", err, installManifest)
 	}
-	buf := upgradeCRDs()
+	buf := upgradeCRDs(valuespkg.Options{})
 	buf.WriteString("---\n")
 	cpbuf, err := upgradeControlPlane(context.Background(), k, upgradeOpts, templateOpts)
 	if err != nil {

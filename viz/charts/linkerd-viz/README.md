@@ -3,7 +3,7 @@
 The Linkerd-Viz extension contains observability and visualization
 components for Linkerd.
 
-![Version: 30.2.3-edge](https://img.shields.io/badge/Version-30.2.3--edge-informational?style=flat-square)
+![Version: 30.4.2-edge](https://img.shields.io/badge/Version-30.4.2--edge-informational?style=flat-square)
 
 ![AppVersion: edge-XX.X.X](https://img.shields.io/badge/AppVersion-edge--XX.X.X-informational?style=flat-square)
 
@@ -11,7 +11,7 @@ components for Linkerd.
 
 ## Quickstart and documentation
 
-You can run Linkerd on any Kubernetes 1.20+ cluster in a matter of seconds. See
+You can run Linkerd on any Kubernetes 1.21+ cluster in a matter of seconds. See
 the [Linkerd Getting Started Guide][getting-started] for how.
 
 For more comprehensive documentation, start with the [Linkerd
@@ -49,7 +49,6 @@ helm install linkerd-viz -n linkerd-viz --create-namespace linkerd/linkerd-viz
 * Follow [@linkerd][twitter] on Twitter.
 * Join the [Linkerd Slack][slack].
 
-[cncf]: https://www.cncf.io/
 [getting-started]: https://linkerd.io/2/getting-started/
 [linkerd2]: https://github.com/linkerd/linkerd2
 [linkerd-announce]: https://lists.cncf.io/g/cncf-linkerd-announce
@@ -61,7 +60,7 @@ helm install linkerd-viz -n linkerd-viz --create-namespace linkerd/linkerd-viz
 
 ## Requirements
 
-Kubernetes: `>=1.20.0-0`
+Kubernetes: `>=1.21.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
@@ -72,6 +71,7 @@ Kubernetes: `>=1.20.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | clusterDomain | string | `"cluster.local"` | Kubernetes DNS Domain name to use |
+| commonLabels | object | `{}` | Labels to apply to all resources |
 | dashboard.UID | string | `nil` | UID for the dashboard resource |
 | dashboard.enforcedHostRegexp | string | `""` | Host header validation regex for the dashboard. See the [Linkerd documentation](https://linkerd.io/2/tasks/exposing-dashboard) for more information |
 | dashboard.image.name | string | `"web"` | Docker image name for the web instance |
@@ -94,14 +94,14 @@ Kubernetes: `>=1.20.0-0`
 | defaultLogLevel | string | `"info"` | Log level for all the viz components |
 | defaultRegistry | string | `"cr.l5d.io/linkerd"` | Docker registry for all viz components |
 | defaultUID | int | `2103` | UID for all the viz components |
-| enablePSP | bool | `false` | NodeAffinity section, See the [K8S documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) for more information nodeAffinity: -- Create Roles and RoleBindings to associate this extension's ServiceAccounts to the control plane PSP resource. This requires that `enabledPSP` is set to true on the control plane install. Note PSP has been deprecated since k8s v1.21 |
+| enablePSP | bool | `false` | Create Roles and RoleBindings to associate this extension's ServiceAccounts to the control plane PSP resource. This requires that `enabledPSP` is set to true on the control plane install. Note PSP has been deprecated since k8s v1.21 |
 | enablePodAntiAffinity | bool | `false` | Enables Pod Anti Affinity logic to balance the placement of replicas across hosts and zones for High Availability. Enable this only when you have multiple replicas of components. |
 | grafana.externalUrl | string | `nil` | url of a Grafana instance hosted off-cluster. Cannot be set if grafana.url is set. The reverse proxy will not be used for this URL. |
 | grafana.uidPrefix | string | `nil` | prefix for Grafana dashboard UID's, used when grafana.externalUrl is set. |
 | grafana.url | string | `nil` | url of an in-cluster Grafana instance with reverse proxy configured, used by the Linkerd viz web dashboard to provide direct links to specific Grafana dashboards. Cannot be set if grafana.externalUrl is set. See the [Linkerd documentation](https://linkerd.io/2/tasks/grafana) for more information |
 | identityTrustDomain | string | clusterDomain | Trust domain used for identity |
 | imagePullSecrets | list | `[]` | For Private docker registries, authentication is needed.  Registry secrets are applied to the respective service accounts |
-| jaegerUrl | string | `""` | url of external jaeger instance Set this to `jaeger.linkerd-jaeger.svc.<clusterDomain>` if you plan to use jaeger extension |
+| jaegerUrl | string | `""` | url of external jaeger instance Set this to `jaeger.linkerd-jaeger.svc.<clusterDomain>:16686` if you plan to use jaeger extension |
 | linkerdNamespace | string | `"linkerd"` | Namespace of the Linkerd core control-plane install |
 | linkerdVersion | string | `"linkerdVersionValue"` | control plane version. See Proxy section for proxy version |
 | metricsAPI.UID | string | `nil` | UID for the metrics-api resource |
@@ -121,7 +121,12 @@ Kubernetes: `>=1.20.0-0`
 | metricsAPI.resources.memory.limit | string | `nil` | Maximum amount of memory that metrics-api container can use |
 | metricsAPI.resources.memory.request | string | `nil` | Amount of memory that the metrics-api container requests |
 | metricsAPI.tolerations | string | `nil` | Tolerations section, See the [K8S documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for more information |
+| namespaceMetadata.image.name | string | `"curl"` | Docker image name for the namespace-metadata instance |
+| namespaceMetadata.image.pullPolicy | string | defaultImagePullPolicy | Pull policy for the namespace-metadata instance |
+| namespaceMetadata.image.registry | string | `"curlimages"` | Docker registry for the namespace-metadata instance |
+| namespaceMetadata.image.tag | string | `"7.78.0"` | Docker image tag for the namespace-metadata instance |
 | nodeSelector | object | `{"kubernetes.io/os":"linux"}` | Default nodeSelector section, See the [K8S documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) for more information |
+| podLabels | object | `{}` | Additional labels to add to all pods |
 | prometheus.alertRelabelConfigs | string | `nil` | Alert relabeling is applied to alerts before they are sent to the Alertmanager. |
 | prometheus.alertmanagers | string | `nil` | Alertmanager instances the Prometheus server sends alerts to configured via the static_configs parameter. |
 | prometheus.args | object | `{"config.file":"/etc/prometheus/prometheus.yml","storage.tsdb.path":"/data","storage.tsdb.retention.time":"6h"}` | Command line options for Prometheus binary |
@@ -168,7 +173,7 @@ Kubernetes: `>=1.20.0-0`
 | tap.resources.ephemeral-storage.request | string | `""` | Amount of ephemeral storage that the tap container requests |
 | tap.resources.memory.limit | string | `nil` | Maximum amount of memory that tap container can use |
 | tap.resources.memory.request | string | `nil` | Amount of memory that the tap container requests |
-| tapInjector.UID | string | `nil` |  |
+| tapInjector.UID | string | `nil` | UID for the tapInjector resource |
 | tapInjector.caBundle | string | `""` | Bundle of CA certificates for the tapInjector. If not provided nor injected with cert-manager, then Helm will use the certificate generated for `tapInjector.crtPEM`. If `tapInjector.externalSecret` is set to true, this value, injectCaFrom, or injectCaFromSecret must be set, as no certificate will be generated. See the cert-manager [CA Injector Docs](https://cert-manager.io/docs/concepts/ca-injector) for more information. |
 | tapInjector.crtPEM | string | `""` | Certificate for the tapInjector. If not provided and not using an external secret then Helm will generate one. |
 | tapInjector.externalSecret | bool | `false` | Do not create a secret resource for the tapInjector webhook. If this is set to `true`, the value `tapInjector.caBundle` must be set or the ca bundle must injected with cert-manager ca injector using `tapInjector.injectCaFrom` or `tapInjector.injectCaFromSecret` (see below). |
@@ -195,4 +200,4 @@ Kubernetes: `>=1.20.0-0`
 | tolerations | string | `nil` | Default tolerations section, See the [K8S documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for more information |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.4.0](https://github.com/norwoodj/helm-docs/releases/v1.4.0)
+Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

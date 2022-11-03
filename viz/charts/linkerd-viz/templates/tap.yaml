@@ -6,11 +6,12 @@ kind: Service
 apiVersion: v1
 metadata:
   name: tap
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
     component: tap
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
     linkerd.io/inject: enabled
@@ -42,8 +43,9 @@ metadata:
     app.kubernetes.io/version: {{default .Values.linkerdVersion .Values.cliVersion}}
     component: tap
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: tap
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{.Values.tap.replicas}}
   selector:
@@ -68,6 +70,7 @@ spec:
         {{- end }}
         {{- with .Values.podAnnotations }}{{ toYaml . | trim | nindent 8 }}{{- end }}
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         linkerd.io/extension: viz
         component: tap
@@ -113,6 +116,7 @@ spec:
         {{- include "partials.resources" .Values.tap.resources | nindent 8 }}
         {{- end }}
         securityContext:
+          readOnlyRootFilesystem: true
           runAsUser: {{.Values.tap.UID | default .Values.defaultUID}}
         volumeMounts:
         - mountPath: /var/run/linkerd/tls

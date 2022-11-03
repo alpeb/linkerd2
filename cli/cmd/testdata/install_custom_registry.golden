@@ -27,9 +27,8 @@ rules:
 - apiGroups: ["authentication.k8s.io"]
   resources: ["tokenreviews"]
   verbs: ["create"]
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get"]
+# TODO(ver) Restrict this to the Linkerd namespace. See
+# https://github.com/linkerd/linkerd2/issues/9367
 - apiGroups: [""]
   resources: ["events"]
   verbs: ["create", "patch"]
@@ -170,6 +169,7 @@ webhooks:
     apiVersions: ["v1alpha1", "v1beta1"]
     resources:
     - authorizationpolicies
+    - httproutes
     - networkauthentications
     - meshtlsauthentications
     - serverauthorizations
@@ -197,6 +197,7 @@ rules:
       - policy.linkerd.io
     resources:
       - authorizationpolicies
+      - httproutes
       - meshtlsauthentications
       - networkauthentications
       - servers
@@ -466,18 +467,40 @@ data:
     imagePullPolicy: IfNotPresent
     imagePullSecrets: []
     linkerdVersion: install-control-plane-version
+    networkValidator:
+      connectAddr: 1.1.1.1:20001
+      listenAddr: 0.0.0.0:4140
+      logFormat: plain
+      logLevel: debug
+      timeout: 10s
     nodeAffinity: null
     nodeSelector:
       kubernetes.io/os: linux
     podAnnotations: {}
     podLabels: {}
+    podMonitor:
+      controller:
+        enabled: true
+        namespaceSelector: |
+          matchNames:
+            - {{ .Release.Namespace }}
+            - linkerd-viz
+            - linkerd-jaeger
+      enabled: false
+      proxy:
+        enabled: true
+      scrapeInterval: 10s
+      scrapeTimeout: 10s
+      serviceMirror:
+        enabled: true
     policyController:
-      defaultAllowPolicy: all-unauthenticated
       image:
         name: my.custom.registry/linkerd-io/policy-controller
         pullPolicy: ""
         version: ""
-      logLevel: linkerd=info,warn
+      logLevel: info
+      probeNetworks:
+      - 0.0.0.0/0
       resources:
         cpu:
           limit: ""
@@ -494,7 +517,6 @@ data:
       externalSecret: true
       injectCaFrom: ""
       injectCaFromSecret: ""
-      keyPEM: ""
       namespaceSelector:
         matchExpressions:
         - key: config.linkerd.io/admission-webhooks
@@ -519,7 +541,7 @@ data:
       accessLog: ""
       await: true
       capabilities: null
-      defaultInboundPolicy: ""
+      defaultInboundPolicy: all-unauthenticated
       enableExternalProfiles: false
       image:
         name: my.custom.registry/linkerd-io/proxy
@@ -550,6 +572,7 @@ data:
           limit: ""
           request: ""
       saMountPath: null
+      shutdownGracePeriod: ""
       uid: 2102
       waitBeforeExitSeconds: 0
     proxyContainerName: linkerd-proxy
@@ -561,7 +584,8 @@ data:
       image:
         name: my.custom.registry/linkerd-io/proxy-init
         pullPolicy: ""
-        version: v1.5.3
+        version: v2.0.0
+      iptablesMode: legacy
       logFormat: ""
       logLevel: ""
       resources:
@@ -575,6 +599,7 @@ data:
           limit: 20Mi
           request: 20Mi
       runAsRoot: false
+      runAsUser: 65534
       saMountPath: null
       skipSubnets: ""
       xtMountPath:
@@ -713,6 +738,8 @@ spec:
       annotations:
         linkerd.io/created-by: linkerd/cli dev-undefined
         linkerd.io/proxy-version: install-proxy-version
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        linkerd.io/trust-root-sha256: 8dc603abd4e755c25c94da05abbf29b9b283a784733651020d72f97ca8ab98e4
         config.linkerd.io/default-inbound-policy: "all-unauthenticated"
       labels:
         linkerd.io/control-plane-component: identity
@@ -827,6 +854,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName
+        - name: _l5d_ns
+          value: linkerd
+        - name: _l5d_trustdomain
+          value: cluster.local
         - name: LINKERD2_PROXY_IDENTITY_DIR
           value: /var/run/linkerd/identity/end-entity
         - name: LINKERD2_PROXY_IDENTITY_TRUST_ANCHORS
@@ -887,7 +918,7 @@ spec:
         - "4190,4191,4567,4568"
         - --outbound-ports-to-ignore
         - "443"
-        image: my.custom.registry/linkerd-io/proxy-init:v1.5.3
+        image: my.custom.registry/linkerd-io/proxy-init:v2.0.0
         imagePullPolicy: IfNotPresent
         name: linkerd-init
         resources:
@@ -905,6 +936,7 @@ spec:
             - NET_RAW
           privileged: false
           runAsNonRoot: true
+          runAsUser: 65534
           readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -1058,6 +1090,8 @@ spec:
       annotations:
         linkerd.io/created-by: linkerd/cli dev-undefined
         linkerd.io/proxy-version: install-proxy-version
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        linkerd.io/trust-root-sha256: 8dc603abd4e755c25c94da05abbf29b9b283a784733651020d72f97ca8ab98e4
         config.linkerd.io/default-inbound-policy: "all-unauthenticated"
       labels:
         linkerd.io/control-plane-component: destination
@@ -1131,6 +1165,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName
+        - name: _l5d_ns
+          value: linkerd
+        - name: _l5d_trustdomain
+          value: cluster.local
         - name: LINKERD2_PROXY_IDENTITY_DIR
           value: /var/run/linkerd/identity/end-entity
         - name: LINKERD2_PROXY_IDENTITY_TRUST_ANCHORS
@@ -1258,8 +1296,9 @@ spec:
         - --cluster-networks=10.0.0.0/8,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16
         - --identity-domain=cluster.local
         - --default-policy=all-unauthenticated
-        - --log-level=linkerd=info,warn
+        - --log-level=info
         - --log-format=plain
+        - --probe-networks=0.0.0.0/0
         image: my.custom.registry/linkerd-io/policy-controller:install-control-plane-version
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -1300,7 +1339,7 @@ spec:
         - "4190,4191,4567,4568"
         - --outbound-ports-to-ignore
         - "443"
-        image: my.custom.registry/linkerd-io/proxy-init:v1.5.3
+        image: my.custom.registry/linkerd-io/proxy-init:v2.0.0
         imagePullPolicy: IfNotPresent
         name: linkerd-init
         resources:
@@ -1318,6 +1357,7 @@ spec:
             - NET_RAW
           privileged: false
           runAsNonRoot: true
+          runAsUser: 65534
           readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
@@ -1347,7 +1387,7 @@ spec:
 ###
 ### Heartbeat
 ###
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: linkerd-heartbeat
@@ -1425,6 +1465,8 @@ spec:
       annotations:
         linkerd.io/created-by: linkerd/cli dev-undefined
         linkerd.io/proxy-version: install-proxy-version
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        linkerd.io/trust-root-sha256: 8dc603abd4e755c25c94da05abbf29b9b283a784733651020d72f97ca8ab98e4
         config.linkerd.io/opaque-ports: "8443"
         config.linkerd.io/default-inbound-policy: "all-unauthenticated"
       labels:
@@ -1499,6 +1541,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName
+        - name: _l5d_ns
+          value: linkerd
+        - name: _l5d_trustdomain
+          value: cluster.local
         - name: LINKERD2_PROXY_IDENTITY_DIR
           value: /var/run/linkerd/identity/end-entity
         - name: LINKERD2_PROXY_IDENTITY_TRUST_ANCHORS
@@ -1600,7 +1646,7 @@ spec:
         - "4190,4191,4567,4568"
         - --outbound-ports-to-ignore
         - "4567,4568"
-        image: my.custom.registry/linkerd-io/proxy-init:v1.5.3
+        image: my.custom.registry/linkerd-io/proxy-init:v2.0.0
         imagePullPolicy: IfNotPresent
         name: linkerd-init
         resources:
@@ -1618,6 +1664,7 @@ spec:
             - NET_RAW
           privileged: false
           runAsNonRoot: true
+          runAsUser: 65534
           readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:

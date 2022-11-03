@@ -4,9 +4,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: psp
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
 - apiGroups: ['policy', 'extensions']
   resources: ['podsecuritypolicies']
@@ -18,10 +19,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: viz-psp
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: viz
     namespace: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 roleRef:
   kind: Role
   name: psp

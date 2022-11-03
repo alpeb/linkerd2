@@ -27,11 +27,11 @@ fn default_policy_annotated() {
         let mut rx = test
             .index
             .write()
-            .pod_server_rx("ns-0", "pod-0", 2222)
+            .pod_server_rx("ns-0", "pod-0", 2222.try_into().unwrap())
             .expect("pod-0.ns-0 should exist");
         assert_eq!(
             rx.borrow_and_update().reference,
-            ServerRef::Default(test.default_policy.to_string()),
+            ServerRef::Default(test.default_policy.as_str()),
         );
 
         // Update the annotation on the pod and check that the watch is updated
@@ -42,10 +42,7 @@ fn default_policy_annotated() {
         );
         test.index.write().apply(pod);
         assert!(rx.has_changed().unwrap());
-        assert_eq!(
-            rx.borrow().reference,
-            ServerRef::Default(default.to_string())
-        );
+        assert_eq!(rx.borrow().reference, ServerRef::Default(default.as_str()));
     }
 }
 
@@ -66,7 +63,7 @@ async fn default_policy_annotated_invalid() {
     let rx = test
         .index
         .write()
-        .pod_server_rx("ns-0", "pod-0", 2222)
+        .pod_server_rx("ns-0", "pod-0", 2222.try_into().unwrap())
         .expect("pod must exist in lookups");
     assert_eq!(*rx.borrow(), test.default_server());
 }
@@ -87,7 +84,7 @@ fn opaque_annotated() {
         let rx = test
             .index
             .write()
-            .pod_server_rx("ns-0", "pod-0", 2222)
+            .pod_server_rx("ns-0", "pod-0", 2222.try_into().unwrap())
             .expect("pod-0.ns-0 should exist");
         assert_eq!(*rx.borrow(), server);
     }
@@ -114,18 +111,19 @@ fn authenticated_annotated() {
                 DefaultPolicy::Deny => DefaultPolicy::Deny,
             };
             InboundServer {
-                reference: ServerRef::Default(policy.to_string()),
+                reference: ServerRef::Default(policy.as_str()),
                 authorizations: mk_default_policy(policy, test.cluster.networks),
                 protocol: ProxyProtocol::Detect {
                     timeout: test.detect_timeout,
                 },
+                http_routes: mk_default_routes(),
             }
         };
 
         let rx = test
             .index
             .write()
-            .pod_server_rx("ns-0", "pod-0", 2222)
+            .pod_server_rx("ns-0", "pod-0", 2222.try_into().unwrap())
             .expect("pod-0.ns-0 should exist");
         assert_eq!(*rx.borrow(), config);
     }

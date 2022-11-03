@@ -24,7 +24,7 @@ export DOCKER_TARGET=${DOCKER_TARGET:-$(os)}
 export DOCKER_PUSH=${DOCKER_PUSH:-}
 
 # Default supported docker image architectures
-export SUPPORTED_ARCHS=${SUPPORTED_ARCHS:-linux/arm64}
+export SUPPORTED_ARCHS=${SUPPORTED_ARCHS:-linux/amd64,linux/arm64,linux/arm/v7}
 
 # Splitting of DOCKER_IMAGES variable is desired.
 # shellcheck disable=SC2206

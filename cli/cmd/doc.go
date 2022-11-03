@@ -177,6 +177,10 @@ func generateAnnotationsDocs() []annotationDoc {
 			Description: "Proxy port to use for outbound traffic",
 		},
 		{
+			Name:        k8s.ProxyPodInboundPortsAnnotation,
+			Description: "Comma-separated list of (non-proxy) container ports exposed by the pod spec. Useful when other mutating webhooks inject sidecar containers after the proxy injector has run",
+		},
+		{
 			Name:        k8s.ProxyCPURequestAnnotation,
 			Description: "Amount of CPU units that the proxy sidecar requests",
 		},
@@ -185,12 +189,20 @@ func generateAnnotationsDocs() []annotationDoc {
 			Description: "Amount of Memory that the proxy sidecar requests",
 		},
 		{
+			Name:        k8s.ProxyEphemeralStorageRequestAnnotation,
+			Description: "Used to override the requestEphemeralStorage config",
+		},
+		{
 			Name:        k8s.ProxyCPULimitAnnotation,
 			Description: "Maximum amount of CPU units that the proxy sidecar can use",
 		},
 		{
 			Name:        k8s.ProxyMemoryLimitAnnotation,
 			Description: "Maximum amount of Memory that the proxy sidecar can use",
+		},
+		{
+			Name:        k8s.ProxyEphemeralStorageLimitAnnotation,
+			Description: "Used to override the limitEphemeralStorage config",
 		},
 		{
 			Name:        k8s.ProxyUIDAnnotation,
@@ -205,12 +217,20 @@ func generateAnnotationsDocs() []annotationDoc {
 			Description: "Log format (plain or json) for the proxy",
 		},
 		{
+			Name:        k8s.ProxyAccessLogAnnotation,
+			Description: "Enables HTTP access logging in the proxy. Accepted values are `apache`, to output the access log in the Appache Common Log Format, and `json`, to output the access log in JSON.",
+		},
+		{
 			Name:        k8s.ProxyEnableExternalProfilesAnnotation,
 			Description: "Enable service profiles for non-Kubernetes services",
 		},
 		{
 			Name:        k8s.ProxyVersionOverrideAnnotation,
 			Description: "Tag to be used for the Linkerd proxy images",
+		},
+		{
+			Name:        k8s.ProxyDefaultInboundPolicyAnnotation,
+			Description: "Proxy's default inbound policy",
 		},
 		{
 			Name:        k8s.ProxyEnableDebugAnnotation,
@@ -221,8 +241,12 @@ func generateAnnotationsDocs() []annotationDoc {
 			Description: "Used to configure the outbound TCP connection timeout in the proxy",
 		},
 		{
+			Name:        k8s.ProxyInboundConnectTimeout,
+			Description: "Inbound TCP connection timeout in the proxy",
+		},
+		{
 			Name:        k8s.ProxyWaitBeforeExitSecondsAnnotation,
-			Description: "The proxy sidecar will stay alive for at least the given period before receiving SIGTERM signal from Kubernetes but no longer than pod's `terminationGracePeriodSeconds`. If not provided, it will be defaulted to `0`",
+			Description: "The proxy sidecar will stay alive for at least the given period after receiving SIGTERM signal from Kubernetes but no longer than pod's `terminationGracePeriodSeconds`. Defaults to `0`",
 		},
 		{
 			Name:        k8s.ProxyAwait,
@@ -235,6 +259,10 @@ func generateAnnotationsDocs() []annotationDoc {
 		{
 			Name:        k8s.ProxySkipSubnetsAnnotation,
 			Description: "Comma-separated list of subnets in valid CIDR format that should be skipped by the proxy",
+		},
+		{
+			Name:        k8s.ProxyShutdownGracePeriodAnnotation,
+			Description: "Grace period for graceful proxy shutdowns. If this timeout elapses before all open connections have completed, the proxy will terminate forcefully, closing any remaining connections.",
 		},
 	}
 }

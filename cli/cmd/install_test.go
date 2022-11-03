@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -12,6 +12,7 @@ import (
 	charts "github.com/linkerd/linkerd2/pkg/charts/linkerd2"
 	"github.com/linkerd/linkerd2/pkg/tls"
 	"helm.sh/helm/v3/pkg/cli/values"
+	valuespkg "helm.sh/helm/v3/pkg/cli/values"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -59,8 +60,7 @@ func TestRender(t *testing.T) {
 				PullPolicy: "ImagePullPolicy",
 				Version:    "PolicyControllerVersion",
 			},
-			LogLevel:           "log-level",
-			DefaultAllowPolicy: "default-allow-policy",
+			LogLevel: "log-level",
 			Resources: &charts.Resources{
 				CPU: charts.Constraints{
 					Limit:   "cpu-limit",
@@ -71,6 +71,7 @@ func TestRender(t *testing.T) {
 					Request: "memory-request",
 				},
 			},
+			ProbeNetworks: []string{"1.0.0.0/0", "2.0.0.0/0"},
 		},
 		Proxy: &charts.Proxy{
 			Image: &charts.Image{
@@ -96,10 +97,13 @@ func TestRender(t *testing.T) {
 				Inbound:  4143,
 				Outbound: 4140,
 			},
-			UID:         2102,
-			OpaquePorts: "25,443,587,3306,5432,11211",
+			UID:                  2102,
+			OpaquePorts:          "25,443,587,3306,5432,11211",
+			Await:                true,
+			DefaultInboundPolicy: "default-allow-policy",
 		},
 		ProxyInit: &charts.ProxyInit{
+			IptablesMode: "legacy",
 			Image: &charts.Image{
 				Name:       "ProxyInitImageName",
 				PullPolicy: "ImagePullPolicy",
@@ -120,6 +124,15 @@ func TestRender(t *testing.T) {
 				MountPath: "/run",
 				Name:      "linkerd-proxy-init-xtables-lock",
 			},
+			RunAsRoot: false,
+			RunAsUser: 65534,
+		},
+		NetworkValidator: &charts.NetworkValidator{
+			LogLevel:    "debug",
+			LogFormat:   "plain",
+			ConnectAddr: "1.1.1.1:20001",
+			ListenAddr:  "0.0.0.0:4140",
+			Timeout:     "10s",
 		},
 		Configs: charts.ConfigJSONs{
 			Global:  "GlobalConfig",
@@ -269,7 +282,7 @@ func TestRenderCRDs(t *testing.T) {
 	addFakeTLSSecrets(defaultValues)
 
 	var buf bytes.Buffer
-	if err := renderCRDs(&buf); err != nil {
+	if err := renderCRDs(&buf, valuespkg.Options{}); err != nil {
 		t.Fatalf("Failed to render templates: %v", err)
 	}
 	if err := testDataDiffer.DiffTestYAML("install_crds.golden", buf.String()); err != nil {
@@ -313,7 +326,7 @@ func testInstallOptionsHA(ha bool) (*charts.Values, error) {
 		return nil, err
 	}
 
-	data, err := ioutil.ReadFile(filepath.Join("testdata", "valid-crt.pem"))
+	data, err := os.ReadFile(filepath.Join("testdata", "valid-crt.pem"))
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +343,7 @@ func testInstallOptionsHA(ha bool) (*charts.Values, error) {
 	}
 	values.Identity.Issuer.TLS.KeyPEM = key
 
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "valid-trust-anchors.pem"))
+	data, err = os.ReadFile(filepath.Join("testdata", "valid-trust-anchors.pem"))
 	if err != nil {
 		return nil, err
 	}
@@ -370,15 +383,15 @@ func testInstallValues() (*charts.Values, error) {
 	values.PolicyController.Image.Version = installControlPlaneVersion
 	values.HeartbeatSchedule = fakeHeartbeatSchedule()
 
-	identityCert, err := ioutil.ReadFile(filepath.Join("testdata", "valid-crt.pem"))
+	identityCert, err := os.ReadFile(filepath.Join("testdata", "valid-crt.pem"))
 	if err != nil {
 		return nil, err
 	}
-	identityKey, err := ioutil.ReadFile(filepath.Join("testdata", "valid-key.pem"))
+	identityKey, err := os.ReadFile(filepath.Join("testdata", "valid-key.pem"))
 	if err != nil {
 		return nil, err
 	}
-	trustAnchorsPEM, err := ioutil.ReadFile(filepath.Join("testdata", "valid-trust-anchors.pem"))
+	trustAnchorsPEM, err := os.ReadFile(filepath.Join("testdata", "valid-trust-anchors.pem"))
 	if err != nil {
 		return nil, err
 	}
@@ -486,6 +499,7 @@ func TestValidate(t *testing.T) {
 			expectedError string
 		}{
 			{"valid", ""},
+			{"valid-with-rsa-anchor", ""},
 			{"expired", "failed to validate issuer credentials: not valid anymore. Expired on 1990-01-01T01:01:11Z"},
 			{"not-valid-yet", "failed to validate issuer credentials: not valid before: 2100-01-01T01:00:51Z"},
 			{"wrong-algo", "failed to validate issuer credentials: must use P-256 curve for public key, instead P-521 was used"},
@@ -509,7 +523,7 @@ func TestValidate(t *testing.T) {
 			}
 			values.Identity.Issuer.TLS.KeyPEM = key
 
-			ca, err := ioutil.ReadFile(filepath.Join("testdata", tc.crtFilePrefix+"-trust-anchors.pem"))
+			ca, err := os.ReadFile(filepath.Join("testdata", tc.crtFilePrefix+"-trust-anchors.pem"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -525,7 +539,7 @@ func TestValidate(t *testing.T) {
 					t.Fatalf("Expected error string\"%s\", got \"%s\"", tc.expectedError, err)
 				}
 			} else if err != nil {
-				t.Fatalf("Expected no error bu got \"%s\"", err)
+				t.Fatalf("Expected no error but got \"%s\"", err)
 			}
 		}
 	})
@@ -569,6 +583,23 @@ func TestValidate(t *testing.T) {
 			} else if err != nil {
 				t.Fatalf("Expected no error but got \"%s\"", err)
 			}
+		}
+	})
+
+	t.Run("Rejects invalid default-inbound-policy", func(t *testing.T) {
+		values, err := testInstallOptions()
+		if err != nil {
+			t.Fatalf("Unexpected error: %v\n", err)
+		}
+		values.Proxy.DefaultInboundPolicy = "everybody"
+		expected := "--default-inbound-policy must be one of: all-authenticated, all-unauthenticated, cluster-authenticated, cluster-unauthenticated, deny (got everybody)"
+
+		err = validateValues(context.Background(), nil, values)
+		if err == nil {
+			t.Fatal("Expected error, got nothing")
+		}
+		if err.Error() != expected {
+			t.Fatalf("Expected error string \"%s\", got \"%s\"", expected, err)
 		}
 	})
 }

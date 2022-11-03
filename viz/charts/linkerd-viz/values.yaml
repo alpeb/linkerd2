@@ -8,6 +8,10 @@
 linkerdVersion: linkerdVersionValue
 # -- Kubernetes DNS Domain name to use
 clusterDomain: cluster.local
+# -- Additional labels to add to all pods
+podLabels: {}
+# -- Labels to apply to all resources
+commonLabels: {}
 # -- Trust domain used for identity
 # @default -- clusterDomain
 identityTrustDomain: ""
@@ -61,7 +65,7 @@ enablePSP: false
 prometheusUrl: ""
 
 # -- url of external jaeger instance
-# Set this to `jaeger.linkerd-jaeger.svc.<clusterDomain>` if you plan to use jaeger extension
+# Set this to `jaeger.linkerd-jaeger.svc.<clusterDomain>:16686` if you plan to use jaeger extension
 jaegerUrl: ""
 
 # metrics API configuration
@@ -347,6 +351,18 @@ dashboard:
     # -- If set, overrides default proxy resources for the proxy injected
     # into the dashboard component
     # resources:
+
+namespaceMetadata:
+  image:
+    # -- Docker registry for the namespace-metadata instance
+    registry: curlimages
+    # -- Docker image name for the namespace-metadata instance
+    name: curl
+    # -- Docker image tag for the namespace-metadata instance
+    tag: 7.78.0
+    # -- Pull policy for the namespace-metadata instance
+    # @default -- defaultImagePullPolicy
+    pullPolicy: ""
 
 grafana:
   # -- url of an in-cluster Grafana instance with reverse proxy configured, used by the

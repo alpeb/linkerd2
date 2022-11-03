@@ -52,14 +52,17 @@ identityTrustDomain: ""
 podAnnotations: {}
 # -- Additional labels to add to all pods
 podLabels: {}
+# -- Labels to apply to all resources
+commonLabels: {}
 # -- Kubernetes priorityClassName for the Linkerd Pods
 priorityClassName: ""
+# -- Runtime Class Name for all the pods
+runtimeClassName: ""
 
 # policy controller configuration
 policyController:
-  # image -- Docker image for the policy controller
   image:
-    # -- Docker image for the proxy
+    # -- Docker image for the policy controller
     name: cr.l5d.io/linkerd/policy-controller
     # -- Pull policy for the proxy container Docker image
     # @default -- imagePullPolicy
@@ -68,13 +71,14 @@ policyController:
     # @default -- linkerdVersion
     version: ""
 
-  # -- The default allow policy to use when no `Server` selects a pod.  One of: "all-authenticated",
-  # "all-unauthenticated", "cluster-authenticated", "cluster-unauthenticated", "deny"
-  # @default -- "all-unauthenticated"
-  defaultAllowPolicy: "all-unauthenticated"
-
   # -- Log level for the policy controller
-  logLevel: linkerd=info,warn
+  logLevel: info
+
+  # -- The networks from which probes are performed.
+  #
+  # By default, all networks are allowed so that all probes are authorized.
+  probeNetworks:
+    - 0.0.0.0/0
 
   # -- policy controller resource requests & limits
   # @default -- destinationResources
@@ -155,7 +159,7 @@ proxy:
   # hooks](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks)
   # for more info on container lifecycle hooks.
   waitBeforeExitSeconds: 0
-  #  -- If set, the application container will not start until the proxy is
+  # -- If set, the application container will not start until the proxy is
   # ready
   await: true
   requireIdentityOnInboundPorts: ""
@@ -168,9 +172,20 @@ proxy:
   # - ElasticSearch (9300) server-first
   # - Memcached (11211) clients do not issue any preamble, which breaks detection
   opaquePorts: "25,587,3306,4444,5432,6379,9300,11211"
+  # -- Grace period for graceful proxy shutdowns. If this timeout elapses before all open connections have completed, the proxy will terminate forcefully, closing any remaining connections.
+  shutdownGracePeriod: ""
+  # -- The default allow policy to use when no `Server` selects a pod.  One of: "all-authenticated",
+  # "all-unauthenticated", "cluster-authenticated", "cluster-unauthenticated", "deny"
+  # @default -- "all-unauthenticated"
+  defaultInboundPolicy: "all-unauthenticated"
 
 # proxy-init configuration
 proxyInit:
+  # -- Variant of iptables that will be used to configure routing. Currently,
+  # proxy-init can be run either in 'nft' or in 'legacy' mode. The mode will
+  # control which utility binary will be called. The host must support
+  # whichever mode will be used
+  iptablesMode: "legacy"
   # -- Default set of inbound ports to skip via iptables
   # - Galera (4567,4568)
   ignoreInboundPorts: "4567,4568"
@@ -192,7 +207,7 @@ proxyInit:
     # @default -- imagePullPolicy
     pullPolicy: ""
     # -- Tag for the proxy-init container Docker image
-    version: v1.5.3
+    version: v2.0.0
   resources:
     cpu:
       # -- Maximum amount of CPU units that the proxy-init container can use
@@ -212,9 +227,28 @@ proxyInit:
   closeWaitTimeoutSecs: 0
   # -- Allow overriding the runAsNonRoot behaviour (<https://github.com/linkerd/linkerd2/issues/7308>)
   runAsRoot: false
+  # -- This value is used only if runAsRoot is false; otherwise runAsUser will be 0
+  runAsUser: 65534
   xtMountPath:
     mountPath: /run
     name: linkerd-proxy-init-xtables-lock
+
+# network validator configuration
+# This runs on a host that uses iptables to reroute network traffic. The validator
+# ensures that iptables is correctly routing requests before we start linkerd.
+networkValidator:
+  # -- Log level for the network-validator
+  # @default -- debug
+  logLevel: debug
+  # -- Log format (`plain` or `json`) for network-validator
+  # @default -- plain
+  logFormat: plain
+  # -- Address to which the network-validator will attempt to connect. we expect this to be rewritten
+  connectAddr: "1.1.1.1:20001"
+  # -- Address to which network-validator listens to requests from itself
+  listenAddr: "0.0.0.0:4140"
+  # -- Timeout before network-validator fails to validate the pod's network connectivity
+  timeout: "10s"
 
 # -- For Private docker registries, authentication is needed.
 #  Registry secrets are applied to the respective service accounts
@@ -282,7 +316,6 @@ identity:
       # -- Key for the issuer certificate (ECDSA). It must be provided during
       # install
       keyPEM: |
-
 
 # -|- CPU, Memory and Ephemeral Storage resources required by the identity controller (see `proxy.resources` for sub-fields)
 #identityResources:
@@ -469,3 +502,27 @@ nodeSelector:
 # [K8S documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity)
 # for more information
 #nodeAffinity:
+
+# Prometheus Operator PodMonitor configuration
+podMonitor:
+  # -- Enables the creation of Prometheus Operator [PodMonitor](https://prometheus-operator.dev/docs/operator/api/#monitoring.coreos.com/v1.PodMonitor)
+  enabled: false
+  # -- Interval at which metrics should be scraped
+  scrapeInterval: 10s
+  # -- Iimeout after which the scrape is ended
+  scrapeTimeout: 10s
+  controller:
+    # -- Enables the creation of PodMonitor for the control-plane
+    enabled: true
+    # -- Selector to select which namespaces the Endpoints objects are discovered from
+    namespaceSelector: |
+      matchNames:
+        - {{ .Release.Namespace }}
+        - linkerd-viz
+        - linkerd-jaeger
+  serviceMirror:
+    # -- Enables the creation of PodMonitor for the Service Mirror component
+    enabled: true
+  proxy:
+    # -- Enables the creation of PodMonitor for the data-plane
+    enabled: true

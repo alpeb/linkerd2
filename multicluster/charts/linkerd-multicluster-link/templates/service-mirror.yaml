@@ -7,6 +7,7 @@ metadata:
     linkerd.io/extension: multicluster
     component: service-mirror
     mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
 - apiGroups: [""]
   resources: ["endpoints", "services"]
@@ -23,6 +24,7 @@ metadata:
     linkerd.io/extension: multicluster
     component: service-mirror
     mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -36,11 +38,12 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: linkerd-service-mirror-read-remote-creds-{{.Values.targetClusterName}}
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-      linkerd.io/extension: multicluster
-      component: service-mirror
-      mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    linkerd.io/extension: multicluster
+    component: service-mirror
+    mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -54,11 +57,12 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: linkerd-service-mirror-read-remote-creds-{{.Values.targetClusterName}}
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-      linkerd.io/extension: multicluster
-      component: service-mirror
-      mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    linkerd.io/extension: multicluster
+    component: service-mirror
+    mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -72,11 +76,12 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: linkerd-service-mirror-{{.Values.targetClusterName}}
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/extension: multicluster
     component: service-mirror
     mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -85,8 +90,9 @@ metadata:
     linkerd.io/extension: multicluster
     component: service-mirror
     mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   name: linkerd-service-mirror-{{.Values.targetClusterName}}
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -97,9 +103,11 @@ spec:
     metadata:
       annotations:
         linkerd.io/inject: enabled
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         component: linkerd-service-mirror
         mirror.linkerd.io/cluster-name: {{.Values.targetClusterName}}
+        {{- with .Values.podLabels }}{{ toYaml . | trim | nindent 8 }}{{- end }}
     spec:
       containers:
       - args:

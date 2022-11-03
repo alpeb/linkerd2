@@ -1,0 +1,48 @@
+name: Devcontainer
+
+# When a pull request is opened that changes the Devcontainer configuration,
+# ensure that the container continues to build properly.
+on:
+  pull_request:
+    paths:
+      - .devcontainer/devcontainer.json
+      - .github/workflows/devcontainer.yml
+      - rust-toolchain
+
+permissions:
+  contents: read
+
+jobs:
+  rust-version:
+    runs-on: ubuntu-latest
+    container: ghcr.io/linkerd/dev:v32-rust
+    steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - run: |
+          dev=$(cargo version | cut -d' ' -f2)
+          tc=$(cat rust-toolchain)
+          if [ "$dev" != "$tc" ]; then
+            echo "::error file=rust-toolchain,line=1::rust-toolchain ($tc) does not match devcontainer ($dev)"
+            exit 1
+          fi
+
+  devcontainer-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get -y --no-install-recommends install jq
+      - run: |
+          # Strip jsonc comments because `jq` doesn't support them.
+          image=$(sed -E '/^\s*\/\/.*/d' .devcontainer/devcontainer.json |jq -Mr .image)
+          line=$(grep -nF '"image"' .devcontainer/devcontainer.json |cut -d':' -f1 |head -n1)
+          if [ "$image" == "null" ]; then
+            echo "::error file=.devcontainer/devcontainer.json,line=$line::Missing image"
+            exit 1
+          fi
+          if ! docker pull "$image" ; then
+            echo "::error file=.devcontainer/devcontainer.json,line=$line::Unable to pull image: $image"
+            exit 1
+          fi

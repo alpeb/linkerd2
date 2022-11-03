@@ -69,6 +69,7 @@ func TestGetOverriddenValues(t *testing.T) {
 							k8s.ProxyAwait:                                   "enabled",
 							k8s.ProxySkipSubnetsAnnotation:                   "172.17.0.0/16",
 							k8s.ProxyAccessLogAnnotation:                     "apache",
+							k8s.ProxyShutdownGracePeriodAnnotation:           "30s",
 						},
 					},
 					Spec: corev1.PodSpec{},
@@ -116,6 +117,7 @@ func TestGetOverriddenValues(t *testing.T) {
 				values.Proxy.OpaquePorts = "4320,4321,4322,4323,4324,4325,3306"
 				values.Proxy.Await = true
 				values.Proxy.AccessLog = "apache"
+				values.Proxy.ShutdownGracePeriod = "30000ms"
 				return values
 			},
 		},
@@ -159,6 +161,7 @@ func TestGetOverriddenValues(t *testing.T) {
 				k8s.ProxyOpaquePortsAnnotation:            "4320-4325,3306",
 				k8s.ProxyAwait:                            "enabled",
 				k8s.ProxyAccessLogAnnotation:              "apache",
+				k8s.ProxyInjectAnnotation:                 "ingress",
 			},
 			spec: appsv1.DeploymentSpec{
 				Template: corev1.PodTemplateSpec{
@@ -201,6 +204,7 @@ func TestGetOverriddenValues(t *testing.T) {
 				values.Proxy.OpaquePorts = "4320,4321,4322,4323,4324,4325,3306"
 				values.Proxy.Await = true
 				values.Proxy.AccessLog = "apache"
+				values.Proxy.IsIngress = true
 				return values
 			},
 		},

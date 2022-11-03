@@ -9,6 +9,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
 - apiGroups: ["apps"]
   resources: ["replicasets"]
@@ -35,6 +36,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -48,10 +50,11 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: linkerd-destination
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 {{- include "partials.image-pull-secrets" .Values.imagePullSecrets }}
 ---
 {{- $host := printf "linkerd-sp-validator.%s.svc" .Release.Namespace }}
@@ -61,10 +64,11 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: linkerd-sp-validator-k8s-tls
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 type: kubernetes.io/tls
@@ -90,6 +94,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 webhooks:
 - name: linkerd-sp-validator.linkerd.io
   namespaceSelector:
@@ -118,10 +123,11 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: linkerd-policy-validator-k8s-tls
-  {{ include "partials.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
   annotations:
     {{ include "partials.annotations.created-by" . }}
 type: kubernetes.io/tls
@@ -147,6 +153,7 @@ metadata:
   labels:
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 webhooks:
 - name: linkerd-policy-validator.linkerd.io
   namespaceSelector:
@@ -167,6 +174,7 @@ webhooks:
     apiVersions: ["v1alpha1", "v1beta1"]
     resources:
     - authorizationpolicies
+    - httproutes
     - networkauthentications
     - meshtlsauthentications
     - serverauthorizations
@@ -181,6 +189,7 @@ metadata:
     app.kubernetes.io/part-of: Linkerd
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 rules:
   - apiGroups:
       - ""
@@ -194,6 +203,7 @@ rules:
       - policy.linkerd.io
     resources:
       - authorizationpolicies
+      - httproutes
       - meshtlsauthentications
       - networkauthentications
       - servers
@@ -211,6 +221,7 @@ metadata:
     app.kubernetes.io/part-of: Linkerd
     linkerd.io/control-plane-component: destination
     linkerd.io/control-plane-ns: {{.Release.Namespace}}
+    {{- with .Values.commonLabels }}{{ toYaml . | trim | nindent 4 }}{{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
