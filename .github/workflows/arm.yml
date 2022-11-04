@@ -9,15 +9,15 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-20.04
     steps:
-      - uses: cross-platform-actions/action@v0.6.2
+      - uses: uraimo/run-on-arch-action@v2
         with:
-          operating_system: linux
-          architecture: arm64
-          shell: bash
+          arch: aarch64
+          distro: alpine_latest
           run: |
-              uname -a
-              echo $SHELL
-              pwd
-              ls -lah
-              whoami
-              env | sort
+            uname -a
+            echo ::set-output name=uname::$(uname -a)
+
+      - name: Get the output
+        # Echo the `uname` output parameter from the `runcmd` step
+        run: |
+          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
