@@ -16,4 +16,7 @@ jobs:
           distro: alpine_latest
           run: |
             uname -a
+            apk add docker
+            addgroup username docker
+            service docker start
             docker info
