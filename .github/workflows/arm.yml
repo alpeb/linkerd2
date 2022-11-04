@@ -16,9 +16,4 @@ jobs:
           distro: alpine_latest
           run: |
             uname -a
-            echo ::set-output name=uname::$(uname -a)
-
-      - name: Get the output
-        # Echo the `uname` output parameter from the `runcmd` step
-        run: |
-          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
+            docker info
