@@ -14,10 +14,10 @@ jobs:
           operating_system: linux
           architecture: arm64
           shell: bash
-        run: |
-            uname -a
-            echo $SHELL
-            pwd
-            ls -lah
-            whoami
-            env | sort
+          run: |
+              uname -a
+              echo $SHELL
+              pwd
+              ls -lah
+              whoami
+              env | sort
