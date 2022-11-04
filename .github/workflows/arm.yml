@@ -17,6 +17,7 @@ jobs:
           run: |
             uname -a
             apk add docker
+            whoami
             addgroup username docker
             service docker start
             docker info
