@@ -518,6 +518,7 @@ data:
     disableHeartBeat: false
     enableEndpointSlices: true
     enableH2Upgrade: true
+    enableIPv6: true
     enablePodAntiAffinity: false
     enablePodDisruptionBudget: false
     heartbeatResources: null
@@ -704,9 +705,9 @@ data:
       ignoreInboundPorts: 4567,4568
       ignoreOutboundPorts: 4567,4568
       image:
-        name: cr.l5d.io/linkerd/proxy-init
+        name: ghcr.io/alpeb/proxy-init
         pullPolicy: ""
-        version: v2.2.4
+        version: ipv6
       iptablesMode: legacy
       kubeAPIServerPorts: 443,6443
       logFormat: ""

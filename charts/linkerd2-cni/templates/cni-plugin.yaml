@@ -176,7 +176,9 @@ data:
         ],
         {{- end }}
         "simulate": false,
-        "use-wait-flag": {{.Values.useWaitFlag}}
+        "use-wait-flag": {{.Values.useWaitFlag}},
+        "iptables-mode": {{.Values.iptablesMode | quote}},
+        "ipv6": {{.Values.enableIPv6}}
       }
     }
 ---

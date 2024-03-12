@@ -66,6 +66,8 @@ type Values struct {
 	CommonLabels        map[string]string   `json:"commonLabels"`
 	ImagePullSecrets    []map[string]string `json:"imagePullSecrets"`
 	ExtraInitContainers []interface{}       `json:"extraInitContainers"`
+	IptablesMode        string              `json:"iptablesMode"`
+	EnableIPv6          bool                `json:"enableIPv6"`
 	EnablePSP           bool                `json:"enablePSP"`
 	Privileged          bool                `json:"privileged"`
 	Resources           Resources           `json:"resources"`

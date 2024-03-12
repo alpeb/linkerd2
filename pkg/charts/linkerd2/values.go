@@ -49,6 +49,7 @@ type (
 		HighAvailability             bool                   `json:"highAvailability"`
 		CNIEnabled                   bool                   `json:"cniEnabled"`
 		EnableEndpointSlices         bool                   `json:"enableEndpointSlices"`
+		EnableIPv6                   bool                   `json:"enableIPv6"`
 		ControlPlaneTracing          bool                   `json:"controlPlaneTracing"`
 		ControlPlaneTracingNamespace string                 `json:"controlPlaneTracingNamespace"`
 		IdentityTrustAnchorsPEM      string                 `json:"identityTrustAnchorsPEM"`

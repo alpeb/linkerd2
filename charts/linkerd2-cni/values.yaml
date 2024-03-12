@@ -26,6 +26,10 @@ destCNINetDir:    "/etc/cni/net.d"
 destCNIBinDir:    "/opt/cni/bin"
 # -- Configures the CNI plugin to use the -w flag for the iptables command
 useWaitFlag:      false
+# -- Variant of iptables that will be used to configure routing
+iptablesMode: "legacy"
+# -- Enables adding IPv6 rules on top of IPv4 rules
+enableIPv6: true
 # -- Kubernetes priorityClassName for the CNI plugin's Pods
 priorityClassName: ""
 
@@ -51,9 +55,9 @@ tolerations:
 # -|- Image section
 image:
   # -- Docker image for the CNI plugin
-  name: "cr.l5d.io/linkerd/cni-plugin"
+  name: "ghcr.io/alpeb/cni-plugin"
   # -- Tag for the CNI container Docker image
-  version: "v1.3.0"
+  version: "ipv6"
   # -- Pull policy for the linkerd-cni container
   pullPolicy: IfNotPresent
 
