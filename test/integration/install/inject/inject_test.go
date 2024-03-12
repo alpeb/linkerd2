@@ -388,7 +388,7 @@ func TestInjectAutoPod(t *testing.T) {
 	falsy := false
 	initUser := int64(65534)
 	seccompProfile := &v1.SeccompProfile{Type: v1.SeccompProfileTypeRuntimeDefault}
-	reg := "cr.l5d.io/linkerd"
+	reg := "ghcr.io/alpeb"
 	if override := os.Getenv(flags.EnvOverrideDockerRegistry); override != "" {
 		reg = override
 	}
@@ -396,6 +396,8 @@ func TestInjectAutoPod(t *testing.T) {
 		Name:  k8s.InitContainerName,
 		Image: reg + "/proxy-init:" + version.ProxyInitVersion,
 		Args: []string{
+			"--iptables-mode=legacy",
+			"--ipv6",
 			"--incoming-proxy-port", "4143",
 			"--outgoing-proxy-port", "4140",
 			"--proxy-uid", "2102",

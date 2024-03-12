@@ -585,9 +585,6 @@ func TestOverridesSecret(t *testing.T) {
 			"identityTrustAnchorsPEM": extractValue(t, "identityTrustAnchorsPEM"),
 			"proxyInit": tree.Tree{
 				"ignoreInboundPorts": skippedInboundPorts,
-				"image": tree.Tree{
-					"name": "ghcr.io/alpeb/proxy-init",
-				},
 			},
 			"proxy": tree.Tree{
 				"image": tree.Tree{
