@@ -291,8 +291,8 @@ policy-controller-image := DOCKER_REGISTRY + "/policy-controller"
 #
 # We execute these commands lazily in case `yq` isn't present (so that other
 # just recipes can succeed).
-_proxy-init-image-cmd := "yq '.proxyInit.image | \"ghcr.io/linkerd/proxy-init:\" + .version' charts/linkerd-control-plane/values.yaml"
-_cni-plugin-image-cmd := "yq '.image | \"ghcr.io/linkerd/cni-plugin:\" + .version' charts/linkerd2-cni/values.yaml"
+_proxy-init-image-cmd := "yq '.proxyInit.image | \"ghcr.io/alpeb/proxy-init:\" + .version' charts/linkerd-control-plane/values.yaml"
+_cni-plugin-image-cmd := "yq '.image | \"ghcr.io/alpeb/cni-plugin:\" + .version' charts/linkerd2-cni/values.yaml"
 _prometheus-image-cmd := "yq '.prometheus.image | .registry + \"/\" + .name + \":\" + .tag'  viz/charts/linkerd-viz/values.yaml"
 
 linkerd *flags:
@@ -464,7 +464,7 @@ _linkerd-viz-uninit:
 
 ##
 ## linkerd multicluster
-## 
+##
 
 _mc-target-k3d-flags := "--k3s-arg --disable='local-storage,metrics-server@server:*' --k3s-arg '--cluster-cidr=10.23.0.0/24@server:*'"
 

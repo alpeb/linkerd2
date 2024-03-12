@@ -66,7 +66,9 @@ data:
         "ports-to-redirect": [],
         "inbound-ports-to-ignore": ["4191","4190"],
         "simulate": false,
-        "use-wait-flag": false
+        "use-wait-flag": false,
+        "iptables-mode": "legacy",
+        "ipv6": true
       }
     }
 ---
@@ -111,7 +113,7 @@ spec:
       # script copies the files into place and then sleeps so
       # that Kubernetes doesn't keep trying to restart it.
       - name: install-cni
-        image: cr.l5d.io/linkerd/cni-plugin:v1.3.0
+        image: ghcr.io/alpeb/cni-plugin:ipv6
         imagePullPolicy: IfNotPresent
         env:
         - name: DEST_CNI_NET_DIR

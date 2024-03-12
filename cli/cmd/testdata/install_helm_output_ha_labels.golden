@@ -528,6 +528,7 @@ data:
     disableHeartBeat: false
     enableEndpointSlices: true
     enableH2Upgrade: true
+    enableIPv6: true
     enablePodAntiAffinity: true
     enablePodDisruptionBudget: true
     heartbeatResources:
@@ -712,7 +713,7 @@ data:
       ignoreInboundPorts: "444"
       ignoreOutboundPorts: "333"
       image:
-        name: cr.l5d.io/linkerd/proxy-init
+        name: ghcr.io/alpeb/proxy-init
         pullPolicy: ""
         version: test-proxy-init-version
       iptablesMode: legacy
@@ -1136,6 +1137,8 @@ spec:
           name: linkerd-identity-token
       initContainers:
       - args:
+        - --iptables-mode=legacy
+        - --ipv6
         - --incoming-proxy-port
         - "4143"
         - --outgoing-proxy-port
@@ -1146,7 +1149,7 @@ spec:
         - "4190,4191,444"
         - --outbound-ports-to-ignore
         - "443,6443"
-        image: cr.l5d.io/linkerd/proxy-init:test-proxy-init-version
+        image: ghcr.io/alpeb/proxy-init:test-proxy-init-version
         imagePullPolicy: IfNotPresent
         name: linkerd-init
         resources:
@@ -1658,6 +1661,8 @@ spec:
           readOnly: true
       initContainers:
       - args:
+        - --iptables-mode=legacy
+        - --ipv6
         - --incoming-proxy-port
         - "4143"
         - --outgoing-proxy-port
@@ -1668,7 +1673,7 @@ spec:
         - "4190,4191,444"
         - --outbound-ports-to-ignore
         - "443,6443"
-        image: cr.l5d.io/linkerd/proxy-init:test-proxy-init-version
+        image: ghcr.io/alpeb/proxy-init:test-proxy-init-version
         imagePullPolicy: IfNotPresent
         name: linkerd-init
         resources:
@@ -2056,6 +2061,8 @@ spec:
           readOnly: true
       initContainers:
       - args:
+        - --iptables-mode=legacy
+        - --ipv6
         - --incoming-proxy-port
         - "4143"
         - --outgoing-proxy-port
@@ -2066,7 +2073,7 @@ spec:
         - "4190,4191,444"
         - --outbound-ports-to-ignore
         - "443,6443"
-        image: cr.l5d.io/linkerd/proxy-init:test-proxy-init-version
+        image: ghcr.io/alpeb/proxy-init:test-proxy-init-version
         imagePullPolicy: IfNotPresent
         name: linkerd-init
         resources:

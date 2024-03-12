@@ -66,6 +66,7 @@ func TestNewValues(t *testing.T) {
 		PodAnnotations:               map[string]string{},
 		PodLabels:                    map[string]string{},
 		EnableEndpointSlices:         true,
+		EnableIPv6:                   true,
 		EnablePodDisruptionBudget:    false,
 		Controller: &Controller{
 			PodDisruptionBudget: &PodDisruptionBudget{
@@ -168,7 +169,7 @@ func TestNewValues(t *testing.T) {
 			LogLevel:            "",
 			LogFormat:           "",
 			Image: &Image{
-				Name:    "cr.l5d.io/linkerd/proxy-init",
+				Name:    "ghcr.io/alpeb/proxy-init",
 				Version: testVersion,
 			},
 			Resources: &Resources{
