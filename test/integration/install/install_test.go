@@ -132,7 +132,6 @@ func TestInstallOrUpgradeCli(t *testing.T) {
 		args = []string{
 			"--controller-log-level", "debug",
 			"--set", fmt.Sprintf("proxy.image.version=%s", TestHelper.GetVersion()),
-			"--set", "proxyInit.image.name=ghcr.io/alpeb/proxy-init",
 			"--skip-inbound-ports", skippedInboundPorts,
 			"--set", "heartbeatSchedule=1 2 3 4 5",
 		}

@@ -261,7 +261,7 @@ proxyInit:
   logFormat: ""
   image:
     # -- Docker image for the proxy-init container
-    name: ghcr.io/alpeb/proxy-init
+    name: cr.l5d.io/linkerd/proxy-init
     # -- Pull policy for the proxy-init container image
     # @default -- imagePullPolicy
     pullPolicy: ""
