@@ -147,6 +147,7 @@ func TestInstall(t *testing.T) {
 		out3, _ := TestHelper.Kubectl("", "-n", "linkerd", "logs", "-l", "linkerd.io/control-plane-component=destination", "-c", "linkerd-proxy")
 		fmt.Printf("*** k logs destination proxy:\n%s", out3)
 		run("ip", "a")
+		run("kubectl", "-n", "linkerd", "logs", "-l", "linkerd-io/control-plane-component=identity", "-c", "linkerd-init")
 		run("kubectl", "-n", "linkerd", "logs", "-l", "linkerd-io/control-plane-component=identity", "-c", "identity")
 		run("kubectl", "-n", "linkerd", "logs", "-l", "linkerd-io/control-plane-component=identity", "-c", "linkerd-proxy")
 		testutil.AnnotatedFatalf(t, "'linkerd check' command failed",
