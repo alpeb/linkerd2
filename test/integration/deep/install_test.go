@@ -3,6 +3,7 @@ package deeptest
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -143,9 +144,23 @@ func TestInstall(t *testing.T) {
 		fmt.Println("*** CHECK FAILED")
 		out2, _ := TestHelper.Kubectl("", "-n", "linkerd", "describe", "po", "-l", "linkerd.io/control-plane-component=destination")
 		fmt.Printf("*** k describe destination:\n%s", out2)
-		out3, _ := TestHelper.Kubectl("", "-n", "linkerd", "logs", "-l", "linkerd.io/control-plane-component=destination")
-		fmt.Printf("*** k describe destination:\n%s", out3)
+		out3, _ := TestHelper.Kubectl("", "-n", "linkerd", "logs", "-l", "linkerd.io/control-plane-component=destination", "-c", "linkerd-proxy")
+		fmt.Printf("*** k logs destination proxy:\n%s", out3)
+		run("ip", "a")
+		run("kubectl", "-n", "linkerd", "logs", "-l", "linkerd-io/control-plane-component=identity", "-c", "identity")
+		run("kubectl", "-n", "linkerd", "logs", "-l", "linkerd-io/control-plane-component=identity", "-c", "linkerd-proxy")
 		testutil.AnnotatedFatalf(t, "'linkerd check' command failed",
 			"'linkerd check' command failed\n%s", out)
+	}
+}
+
+func run(name string, args ...string) {
+	fmt.Printf("*** running %s %#v\n", name, args)
+	cmd := exec.Command(name, args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("**** error: %s\n", err)
+	} else {
+		fmt.Println(string(out))
 	}
 }
