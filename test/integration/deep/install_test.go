@@ -140,6 +140,11 @@ func TestInstall(t *testing.T) {
 
 	out, err = TestHelper.LinkerdRun("check", "--wait=3m")
 	if err != nil {
+		fmt.Println("*** CHECK FAILED")
+		out2, _ := TestHelper.Kubectl("", "-n", "linkerd", "describe", "po", "-l", "linkerd.io/control-plane-component=destination")
+		fmt.Printf("*** k describe destination:\n%s", out2)
+		out3, _ := TestHelper.Kubectl("", "-n", "linkerd", "logs", "-l", "linkerd.io/control-plane-component=destination")
+		fmt.Printf("*** k describe destination:\n%s", out3)
 		testutil.AnnotatedFatalf(t, "'linkerd check' command failed",
 			"'linkerd check' command failed\n%s", out)
 	}
