@@ -211,8 +211,8 @@ jobs:
     strategy:
       matrix:
         config:
-          - kind-ipv6.yml
-          - kind-dual.yml
+          - ipv6
+          - dualstack
         test:
           - cni-calico-deep
           - deep
@@ -232,7 +232,7 @@ jobs:
       - run: find image-archives -ls
       - uses: helm/kind-action@99576bfa6ddf9a8e612d83b513da5a75875caced
         with:
-          config: test/integration/deep/${{ matrix.config }}
+          config: test/integration/deep/kind-${{ matrix.config }}.yml
           cluster_name: ${{ matrix.test }}
           # TODO(alpeb): remove when the default is v1.29 or higher
           kubectl_version: v1.29.3
