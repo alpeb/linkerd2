@@ -14,7 +14,8 @@ testdir="$bindir"/../test/integration
 
 export default_test_names=(deep deep-native-sidecar viz external helm-upgrade uninstall upgrade-edge default-policy-deny rsa-ca)
 export external_resource_test_names=(external-resources)
-export all_test_names=(cluster-domain cni-calico-deep multicluster "${default_test_names[*]}" "${external_resource_test_names[*]}")
+export dual_stack_test_names=(deep-dual-stack cni-calico-deep-dual-stack)
+export all_test_names=(cluster-domain cni-calico-deep multicluster "${default_test_names[*]}" "${external_resource_test_names[*]}" "${dual_stack_test_names[*]}")
 images_load_default=(proxy controller policy-controller web metrics-api tap)
 
 tests_usage() {
