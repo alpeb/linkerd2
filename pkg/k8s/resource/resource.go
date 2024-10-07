@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	link "github.com/linkerd/linkerd2/controller/gen/apis/link/v1alpha1"
 	policy "github.com/linkerd/linkerd2/controller/gen/apis/policy/v1alpha1"
 	profile "github.com/linkerd/linkerd2/controller/gen/apis/serviceprofile/v1alpha2"
 	"github.com/linkerd/linkerd2/pkg/k8s"
@@ -57,7 +56,6 @@ var prunableNamespaceResources []schema.GroupVersionResource = []schema.GroupVer
 	k8s.ServerGVR,
 	k8s.SazGVR,
 	k8s.AuthorizationPolicyGVR,
-	link.SchemeGroupVersion.WithResource("links"),
 	k8s.HTTPRouteGVR,
 }
 

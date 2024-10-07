@@ -22,8 +22,7 @@ import (
 	"fmt"
 
 	v1beta1 "github.com/linkerd/linkerd2/controller/gen/apis/externalworkload/v1beta1"
-	v1alpha1 "github.com/linkerd/linkerd2/controller/gen/apis/link/v1alpha1"
-	policyv1alpha1 "github.com/linkerd/linkerd2/controller/gen/apis/policy/v1alpha1"
+	v1alpha1 "github.com/linkerd/linkerd2/controller/gen/apis/policy/v1alpha1"
 	v1beta3 "github.com/linkerd/linkerd2/controller/gen/apis/policy/v1beta3"
 	serverv1beta1 "github.com/linkerd/linkerd2/controller/gen/apis/server/v1beta1"
 	v1beta2 "github.com/linkerd/linkerd2/controller/gen/apis/server/v1beta2"
@@ -64,22 +63,18 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	case v1beta1.SchemeGroupVersion.WithResource("externalworkloads"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Externalworkload().V1beta1().ExternalWorkloads().Informer()}, nil
 
-		// Group=link, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("links"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Link().V1alpha1().Links().Informer()}, nil
-
 		// Group=linkerd.io, Version=v1alpha2
 	case v1alpha2.SchemeGroupVersion.WithResource("serviceprofiles"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Linkerd().V1alpha2().ServiceProfiles().Informer()}, nil
 
 		// Group=policy, Version=v1alpha1
-	case policyv1alpha1.SchemeGroupVersion.WithResource("authorizationpolicies"):
+	case v1alpha1.SchemeGroupVersion.WithResource("authorizationpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().AuthorizationPolicies().Informer()}, nil
-	case policyv1alpha1.SchemeGroupVersion.WithResource("httproutes"):
+	case v1alpha1.SchemeGroupVersion.WithResource("httproutes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().HTTPRoutes().Informer()}, nil
-	case policyv1alpha1.SchemeGroupVersion.WithResource("meshtlsauthentications"):
+	case v1alpha1.SchemeGroupVersion.WithResource("meshtlsauthentications"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().MeshTLSAuthentications().Informer()}, nil
-	case policyv1alpha1.SchemeGroupVersion.WithResource("networkauthentications"):
+	case v1alpha1.SchemeGroupVersion.WithResource("networkauthentications"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().NetworkAuthentications().Informer()}, nil
 
 		// Group=policy, Version=v1beta3

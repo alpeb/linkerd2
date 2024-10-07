@@ -26,7 +26,6 @@ import (
 	versioned "github.com/linkerd/linkerd2/controller/gen/client/clientset/versioned"
 	externalworkload "github.com/linkerd/linkerd2/controller/gen/client/informers/externalversions/externalworkload"
 	internalinterfaces "github.com/linkerd/linkerd2/controller/gen/client/informers/externalversions/internalinterfaces"
-	link "github.com/linkerd/linkerd2/controller/gen/client/informers/externalversions/link"
 	policy "github.com/linkerd/linkerd2/controller/gen/client/informers/externalversions/policy"
 	server "github.com/linkerd/linkerd2/controller/gen/client/informers/externalversions/server"
 	serverauthorization "github.com/linkerd/linkerd2/controller/gen/client/informers/externalversions/serverauthorization"
@@ -259,7 +258,6 @@ type SharedInformerFactory interface {
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
 	Externalworkload() externalworkload.Interface
-	Link() link.Interface
 	Policy() policy.Interface
 	Server() server.Interface
 	Serverauthorization() serverauthorization.Interface
@@ -268,10 +266,6 @@ type SharedInformerFactory interface {
 
 func (f *sharedInformerFactory) Externalworkload() externalworkload.Interface {
 	return externalworkload.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Link() link.Interface {
-	return link.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Policy() policy.Interface {
