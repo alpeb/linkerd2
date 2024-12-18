@@ -8,7 +8,7 @@ permissions:
 env:
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
-  DOCKER_REGISTRY: ghcr.io/linkerd
+  DOCKER_REGISTRY: ghcr.io/alpeb
   GH_ANNOTATION: true
   K3D_VERSION: v5.7.5
   RUST_BACKTRACE: short
@@ -111,7 +111,10 @@ jobs:
           LINKERD2_PROXY_GITHUB_TOKEN: ${{ secrets.LINKERD2_PROXY_GITHUB_TOKEN || github.token }}
         with:
           docker-registry: ${{ env.DOCKER_REGISTRY }}
-          docker-target: linux-amd64
+          docker-target: multi-arch
+          docker-push: 1
+          docker-ghcr-username: ${{ secrets.DOCKER_GHCR_USERNAME }}
+          docker-ghcr-pat: ${{ secrets.DOCKER_GHCR_PAT }}
           component: ${{ matrix.component }}
           tag: ${{ needs.meta.outputs.tag }}
       - name: Run docker save
