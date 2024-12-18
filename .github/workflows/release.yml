@@ -1,16 +1,13 @@
 name: Release
 
-on:
-  push:
-    tags:
-      - "edge-*"
+on: push
 
 permissions:
   contents: read
 
 env:
   GH_ANNOTATION: true
-  DOCKER_REGISTRY: ghcr.io/linkerd
+  DOCKER_REGISTRY: ghcr.io/alpeb
   K3D_VERSION: v5.7.5
   LINKERD2_PROXY_REPO: ${{ vars.LINKERD2_PROXY_REPO }}
 
@@ -145,127 +142,3 @@ jobs:
           # Validate the CLI version matches the current build tag.
           [[ "$TAG" == "$($CMD version --short --client)" ]]
           bin/tests --images preload --name ${{ matrix.integration_test }} "$CMD"
-
-  choco_pack:
-    # only runs for stable tags. The conditionals are at each step level instead of the job level
-    # otherwise the jobs below that depend on this one won't run
-    name: Pack Chocolatey release
-    timeout-minutes: 30
-    needs: [integration_tests]
-    runs-on: windows-2019
-    steps:
-      - name: Checkout code
-        if: startsWith(github.ref, 'refs/tags/stable')
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Chocolatey - update nuspec
-        if: startsWith(github.ref, 'refs/tags/stable')
-        run: |
-          $LINKERD_VERSION=$env:GITHUB_REF.Substring(17)
-          (Get-Content bin\win\linkerd.nuspec).replace('LINKERD_VERSION', "$LINKERD_VERSION") | Set-Content bin\win\linkerd.nuspec
-      - name: Chocolatey - pack
-        if: startsWith(github.ref, 'refs/tags/stable')
-        uses: crazy-max/ghaction-chocolatey@2ae99523e93879734d432250f87e2c45c379cd60
-        with:
-          args: pack bin/win/linkerd.nuspec
-      - name: Chocolatey - upload package
-        if: startsWith(github.ref, 'refs/tags/stable')
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
-        with:
-          name: choco
-          path: ./linkerd.*.nupkg
-
-  gh_release:
-    name: Create GH release
-    needs:
-      - tag
-      - integration_tests
-    # TODO(ver) choco packages are not produced for edge releases...
-    # - choco_pack
-    timeout-minutes: 30
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      # - name: Download choco package
-      #   if: startsWith(github.ref, 'refs/tags/stable')
-      #   uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
-      #   with:
-      #     name: choco
-      #     path: choco
-      - name: Pull CLI binaries
-        run: DOCKER_TARGET=multi-arch bin/docker-pull-binaries '${{ needs.tag.outputs.tag }}'
-        #  v=${TAG#"stable-"}
-        #  mv choco/linkerd.*.nupkg "target/release/linkerd2-cli-stable-$v.nupkg" || true
-      - name: Create release
-        id: create_release
-        uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8bb048
-        with:
-          name: "${{ needs.tag.outputs.tag }}"
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-          files: |
-            ./target/release/linkerd2-cli-*-darwin*
-            ./target/release/linkerd2-cli-*-linux-*
-            ./target/release/linkerd2-cli-*-windows.*
-            ./target/release/linkerd2-cli-*.nupkg
-
-  website_publish:
-    name: Linkerd website publish
-    needs: [gh_release]
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    timeout-minutes: 30
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - name: Create linkerd/website repository dispatch event
-        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          repository: linkerd/website
-          event-type: release
-
-  website_publish_check:
-    name: Linkerd website publish check
-    needs: [tag, website_publish]
-    timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/stable') || startsWith(github.ref, 'refs/tags/edge')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Set install target for stable
-        if: startsWith(github.ref, 'refs/tags/stable')
-        run: echo "INSTALL=install" >> "$GITHUB_ENV"
-      - name: Set install target for edge
-        if: startsWith(github.ref, 'refs/tags/edge')
-        run: echo "INSTALL=install-edge" >> "$GITHUB_ENV"
-      - name: Check published version
-        shell: bash
-        run: |
-          TAG='${{ needs.tag.outputs.tag }}'
-          until RES=$(bin/scurl "https://run.linkerd.io/$INSTALL" | grep "LINKERD2_VERSION=\${LINKERD2_VERSION:-$TAG}") \
-            || (( count++ >= 10 ))
-          do
-            sleep 30
-          done
-          if [[ -z "$RES" ]]; then
-            echo "::error::The version '$TAG' was NOT found published in the website"
-            exit 1
-          fi
-
-  chart_deploy:
-    name: Helm chart deploy
-    needs: [gh_release]
-    timeout-minutes: 30
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Log into GCP
-        uses: "google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f"
-        with:
-          credentials_json: ${{ secrets.LINKERD_SITE_TOKEN }}
-      - name: Edge Helm chart creation and upload
-        uses: ./.github/actions/helm-publish
