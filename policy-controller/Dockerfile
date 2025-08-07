@@ -21,10 +21,10 @@ RUN --mount=type=cache,target=target \
     --mount=type=cache,target=/usr/local/cargo/registry \
     target=$(case "$TARGETARCH" in \
         amd64) echo x86_64-unknown-linux-musl ;; \
-        arm64) echo aarch64-unknown-linux-musl ;; \
+        arm64) apt-get -y update && apt-get install --no-install-recommends -y binutils-aarch64-linux-gnu ;; \
         *) echo "unsupported architecture: $TARGETARCH" >&2; exit 1 ;; \
     esac) && \
-    just-cargo profile=$BUILD_TYPE target=$target build --package=linkerd-policy-controller && \
+    just-cargo CFLAGS_aarch64_unknown_linux_musl="" profile=$BUILD_TYPE target=$target build --package=linkerd-policy-controller && \
     mv "target/$target/$BUILD_TYPE/linkerd-policy-controller" /tmp/
 
 FROM scratch AS runtime
