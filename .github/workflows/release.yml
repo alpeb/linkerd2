@@ -50,5 +50,6 @@ jobs:
         with:
           docker-registry: ${{ env.DOCKER_REGISTRY }}
           docker-target: multi-arch
+          docker-push: 1
           component: ${{ matrix.component }}
           tag: ${{ needs.tag.outputs.tag }}
