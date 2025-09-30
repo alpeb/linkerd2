@@ -1,6 +1,9 @@
 name: Integration tests
 
-on: pull_request
+on:
+  push:
+    branches:
+    - main
 
 permissions:
   contents: read
