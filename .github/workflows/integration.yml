@@ -67,7 +67,6 @@ jobs:
 
   build-cli:
     needs: meta
-    if: needs.meta.outputs.changed == 'true'
     uses: ./.github/workflows/cli-build.yml
     with:
       version: ${{ needs.meta.outputs.tag }}
@@ -81,7 +80,6 @@ jobs:
 
   build-core:
     needs: meta
-    if: needs.meta.outputs.changed == 'true'
     runs-on: ${{ vars.LINKERD2_RUNNER || 'ubuntu-24.04' }}
     services:
       registry:
@@ -116,7 +114,6 @@ jobs:
 
   test-multicluster:
     needs: [meta, build-cli, build-core]
-    if: needs.meta.outputs.changed == 'true'
     runs-on: ${{ vars.LINKERD2_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 30
     strategy:
