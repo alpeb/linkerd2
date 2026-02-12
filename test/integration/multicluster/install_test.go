@@ -94,12 +94,13 @@ func TestInstall(t *testing.T) {
 	// Global state to keep track of clusters
 	contexts = TestHelper.GetMulticlusterContexts()
 	for _, ctx := range contexts {
-		err = TestHelper.InstallGatewayAPIWithContext(ctx)
+		ret, err := TestHelper.InstallGatewayAPIWithContext(ctx)
 		if err != nil {
+			fmt.Printf("RETURNED: %s\n", ret)
 			lbCmd := []string{
 				"get", "po", "-A",
 			}
-			lbIP, err := TestHelper.KubectlWithContext("", ctx, lbCmd...)
+			lbIP, _ := TestHelper.KubectlWithContext("", ctx, lbCmd...)
 			fmt.Println("kubectl get po -A: \n" + lbIP)
 			testutil.AnnotatedFatal(t, "failed to install gateway-api", err)
 		}
