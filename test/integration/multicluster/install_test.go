@@ -97,8 +97,11 @@ func TestInstall(t *testing.T) {
 		ret, err := TestHelper.InstallGatewayAPIWithContext(ctx)
 		if err != nil {
 			fmt.Printf("RETURNED: %s\n", ret)
-			lbCmd := []string{
+			/*lbCmd := []string{
 				"get", "po", "-A",
+			}*/
+			lbCmd := []string{
+				"get", "crd",
 			}
 			lbIP, _ := TestHelper.KubectlWithContext("", ctx, lbCmd...)
 			fmt.Println("kubectl get po -A: \n" + lbIP)
