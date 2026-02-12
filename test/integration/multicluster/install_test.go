@@ -96,6 +96,11 @@ func TestInstall(t *testing.T) {
 	for _, ctx := range contexts {
 		err = TestHelper.InstallGatewayAPIWithContext(ctx)
 		if err != nil {
+			lbCmd := []string{
+				"get", "po", "-A",
+			}
+			lbIP, err := TestHelper.KubectlWithContext("", ctx, lbCmd...)
+			fmt.Println("kubectl get po -A: \n" + lbIP)
 			testutil.AnnotatedFatal(t, "failed to install gateway-api", err)
 		}
 
